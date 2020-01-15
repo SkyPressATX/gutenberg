@@ -174,6 +174,7 @@ function NavigationLinkEdit( {
 									title: newTitle = '',
 									url: newURL = '',
 									opensInNewTab: newOpensInNewTab,
+<<<<<<< HEAD
 								} = {} ) => setAttributes( {
 									title: escape( newTitle ),
 									url: encodeURI( newURL ),
@@ -191,6 +192,20 @@ function NavigationLinkEdit( {
 									opensInNewTab: newOpensInNewTab,
 								} ) }
 								onClose={ () => setIsLinkOpen( false ) }
+=======
+								} = {} ) => {
+									setAttributes( {
+										title: escape( newTitle ),
+										url: newURL,
+										label: label || escape( newTitle ),
+										opensInNewTab: newOpensInNewTab,
+									} );
+									setIsLinkOpen( false );
+								} }
+								onClose={ () => {
+									setIsLinkOpen( false );
+								} }
+>>>>>>> On link selection for a nav link, move focus back to whence it came.
 							/>
 						</Popover>
 					) }
