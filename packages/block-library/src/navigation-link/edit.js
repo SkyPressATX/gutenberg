@@ -10,6 +10,7 @@ import { escape, unescape } from 'lodash';
 import { compose } from '@wordpress/compose';
 import { createBlock } from '@wordpress/blocks';
 import { withDispatch, withSelect } from '@wordpress/data';
+import { placeCaretAtHorizontalEdge } from '@wordpress/dom';
 import {
 	ExternalLink,
 	KeyboardShortcuts,
@@ -35,7 +36,7 @@ import {
 	RichText,
 	__experimentalLinkControl as LinkControl,
 } from '@wordpress/block-editor';
-import { Fragment, useState, useEffect } from '@wordpress/element';
+import { Fragment, useState, useEffect, useRef } from '@wordpress/element';
 
 function NavigationLinkEdit( {
 	attributes,
@@ -54,6 +55,8 @@ function NavigationLinkEdit( {
 	const [ isLinkOpen, setIsLinkOpen ] = useState( false );
 	const itemLabelPlaceholder = __( 'Add link…' );
 
+	const ref = useRef();
+
 	// Show the LinkControl on mount if the URL is empty
 	// ( When adding a new menu item)
 	// This can't be done in the useState call because it cconflicts
@@ -64,6 +67,9 @@ function NavigationLinkEdit( {
 		}
 	}, [] );
 
+	// WIP: This is just a test to see if selecting the label content on link change makes sense.
+	const _experimentalSelectLabelContentOnChange = true;
+
 	/**
 	 * The hook shouldn't be necessary but due to a focus loss happening
 	 * when selecting a suggestion in the link popover, we force close on block unselection.
@@ -73,6 +79,24 @@ function NavigationLinkEdit( {
 			setIsLinkOpen( false );
 		}
 	}, [ isSelected ] );
+
+	function focusLabel() {
+		if ( _experimentalSelectLabelContentOnChange ) {
+			// select all the text and place cursor at the end (although you can't see it).
+			ref.current.focus();
+
+			const selection = window.getSelection();
+			const range = document.createRange();
+
+			range.selectNodeContents( ref.current );
+
+			selection.removeAllRanges();
+			selection.addRange( range );
+		} else {
+			// place the cursor it at the end of the content.
+			placeCaretAtHorizontalEdge( ref.current, true );
+		}
+	}
 
 	return (
 		<Fragment>
@@ -152,6 +176,7 @@ function NavigationLinkEdit( {
 			>
 				<div>
 					<RichText
+						ref={ ref }
 						className="wp-block-navigation-link__content"
 						value={ label }
 						onChange={ ( labelValue ) => setAttributes( { label: labelValue } ) }
@@ -201,6 +226,7 @@ function NavigationLinkEdit( {
 										opensInNewTab: newOpensInNewTab,
 									} );
 									setIsLinkOpen( false );
+									focusLabel();
 								} }
 								onClose={ () => {
 									setIsLinkOpen( false );
