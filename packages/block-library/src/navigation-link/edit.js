@@ -10,7 +10,6 @@ import { escape, unescape } from 'lodash';
 import { compose } from '@wordpress/compose';
 import { createBlock } from '@wordpress/blocks';
 import { withDispatch, withSelect } from '@wordpress/data';
-import { placeCaretAtHorizontalEdge } from '@wordpress/dom';
 import {
 	ExternalLink,
 	KeyboardShortcuts,
@@ -77,22 +76,29 @@ function NavigationLinkEdit( {
 		}
 	}, [ isSelected ] );
 
-	function focusLabel( selectText = true ) {
-		if ( selectText ) {
-			// select all the text and place cursor at the end (although you can't see it).
-			ref.current.focus();
-
-			const selection = window.getSelection();
-			const range = document.createRange();
-
-			range.selectNodeContents( ref.current );
-
-			selection.removeAllRanges();
-			selection.addRange( range );
-		} else {
-			// place the cursor it at the end of the content.
-			placeCaretAtHorizontalEdge( ref.current, true );
+	// When the link url changes, close the LinkControl and focus the label.
+	useEffect( () => {
+		if ( url ) {
+			// close the link
+			setIsLinkOpen( false );
+			// focus the label
+			focusLabel();
 		}
+	}, [ url ] );
+
+	/**
+	 * Focus the navigation link label text.
+	 */
+	function focusLabel( ) {
+		// select all the text and place cursor at the end (although you can't see it).
+		ref.current.focus();
+
+		const selection = window.getSelection();
+		const range = document.createRange();
+
+		range.selectNodeContents( ref.current );
+		selection.removeAllRanges();
+		selection.addRange( range );
 	}
 
 	return (
@@ -203,8 +209,6 @@ function NavigationLinkEdit( {
 										label: label || escape( newTitle ),
 										opensInNewTab: newOpensInNewTab,
 									} );
-									setIsLinkOpen( false );
-									focusLabel();
 								} }
 								onClose={ () => {
 									setIsLinkOpen( false );
