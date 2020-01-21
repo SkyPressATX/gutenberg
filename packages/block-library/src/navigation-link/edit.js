@@ -76,9 +76,9 @@ function NavigationLinkEdit( {
 		}
 	}, [ isSelected ] );
 
-	// When the link url changes, close the LinkControl and focus the label.
+	// If the LinkControl popover is open and the URL has changed, close the LinkControl and focus the label.
 	useEffect( () => {
-		if ( url ) {
+		if ( isLinkOpen && url ) {
 			// close the link
 			setIsLinkOpen( false );
 			// focus the label
