@@ -67,9 +67,6 @@ function NavigationLinkEdit( {
 		}
 	}, [] );
 
-	// WIP: This is just a test to see if selecting the label content on link change makes sense.
-	const _experimentalSelectLabelContentOnChange = true;
-
 	/**
 	 * The hook shouldn't be necessary but due to a focus loss happening
 	 * when selecting a suggestion in the link popover, we force close on block unselection.
@@ -80,8 +77,8 @@ function NavigationLinkEdit( {
 		}
 	}, [ isSelected ] );
 
-	function focusLabel() {
-		if ( _experimentalSelectLabelContentOnChange ) {
+	function focusLabel( selectText = true ) {
+		if ( selectText ) {
 			// select all the text and place cursor at the end (although you can't see it).
 			ref.current.focus();
 
@@ -199,25 +196,6 @@ function NavigationLinkEdit( {
 									title: newTitle = '',
 									url: newURL = '',
 									opensInNewTab: newOpensInNewTab,
-<<<<<<< HEAD
-								} = {} ) => setAttributes( {
-									title: escape( newTitle ),
-									url: encodeURI( newURL ),
-									label: ( () => {
-										const normalizedTitle = newTitle.replace( /http(s?):\/\//gi, '' );
-										const normalizedURL = newURL.replace( /http(s?):\/\//gi, '' );
-										if (
-											newTitle !== '' &&
-											normalizedTitle !== normalizedURL &&
-											label !== newTitle ) {
-											return escape( newTitle );
-										}
-										return label;
-									} )(),
-									opensInNewTab: newOpensInNewTab,
-								} ) }
-								onClose={ () => setIsLinkOpen( false ) }
-=======
 								} = {} ) => {
 									setAttributes( {
 										title: escape( newTitle ),
@@ -231,7 +209,6 @@ function NavigationLinkEdit( {
 								onClose={ () => {
 									setIsLinkOpen( false );
 								} }
->>>>>>> On link selection for a nav link, move focus back to whence it came.
 							/>
 						</Popover>
 					) }
