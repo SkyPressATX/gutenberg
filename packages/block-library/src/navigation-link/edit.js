@@ -82,20 +82,18 @@ function NavigationLinkEdit( {
 			// close the link
 			setIsLinkOpen( false );
 			// focus the label
-			focusLabel();
+			selectLabelText();
 		}
 	}, [ url ] );
 
 	/**
-	 * Focus the navigation link label text.
+	 * Focus the navigation link label text and select it.
 	 */
-	function focusLabel( ) {
-		// select all the text and place cursor at the end (although you can't see it).
+	function selectLabelText( ) {
 		ref.current.focus();
-
 		const selection = window.getSelection();
 		const range = document.createRange();
-
+		// Get the range of the current ref contents so we can add this range to the selection.
 		range.selectNodeContents( ref.current );
 		selection.removeAllRanges();
 		selection.addRange( range );
