@@ -6,15 +6,11 @@ import { difference } from 'lodash';
 /**
  * WordPress dependencies
  */
-import { MenuItem } from '@wordpress/components';
+import { BlockSettingsMenuControls, MenuItem } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 
-/**
- * Internal dependencies
- */
-import PluginBlockSettingsMenuGroup from './plugin-block-settings-menu-group';
-
-const isEverySelectedBlockAllowed = ( selected, allowed ) => difference( selected, allowed ).length === 0;
+const isEverySelectedBlockAllowed = ( selected, allowed ) =>
+	difference( selected, allowed ).length === 0;
 
 /**
  * Plugins may want to add an item to the menu either for every block
@@ -27,7 +23,8 @@ const isEverySelectedBlockAllowed = ( selected, allowed ) => difference( selecte
  * @param {string[]} allowedBlocks Array containing the names of the blocks allowed
  * @return {boolean} Whether the item will be rendered or not.
  */
-const shouldRenderItem = ( selectedBlocks, allowedBlocks ) => ! Array.isArray( allowedBlocks ) ||
+const shouldRenderItem = ( selectedBlocks, allowedBlocks ) =>
+	! Array.isArray( allowedBlocks ) ||
 	isEverySelectedBlockAllowed( selectedBlocks, allowedBlocks );
 
 /**
@@ -83,22 +80,31 @@ const shouldRenderItem = ( selectedBlocks, allowedBlocks ) => ! Array.isArray( a
  *
  * @return {WPComponent} The component to be rendered.
  */
-const PluginBlockSettingsMenuItem = ( { allowedBlocks, icon, label, onClick, small, role } ) => (
-	<PluginBlockSettingsMenuGroup>
+const PluginBlockSettingsMenuItem = ( {
+	allowedBlocks,
+	icon,
+	label,
+	onClick,
+	small,
+	role,
+} ) => (
+	<BlockSettingsMenuControls>
 		{ ( { selectedBlocks, onClose } ) => {
 			if ( ! shouldRenderItem( selectedBlocks, allowedBlocks ) ) {
 				return null;
 			}
-			return ( <MenuItem
-				onClick={ compose( onClick, onClose ) }
-				icon={ icon || 'admin-plugins' }
-				label={ small ? label : undefined }
-				role={ role }
-			>
-				{ ! small && label }
-			</MenuItem> );
+			return (
+				<MenuItem
+					onClick={ compose( onClick, onClose ) }
+					icon={ icon || 'admin-plugins' }
+					label={ small ? label : undefined }
+					role={ role }
+				>
+					{ ! small && label }
+				</MenuItem>
+			);
 		} }
-	</PluginBlockSettingsMenuGroup>
+	</BlockSettingsMenuControls>
 );
 
 export default PluginBlockSettingsMenuItem;

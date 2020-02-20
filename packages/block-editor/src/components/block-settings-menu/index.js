@@ -14,6 +14,13 @@ import {
 	MenuItem,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
+import {
+	page,
+	trash,
+	moreHorizontal,
+	insertAfter,
+	insertBefore,
+} from '@wordpress/icons';
 
 /**
  * Internal dependencies
@@ -23,7 +30,7 @@ import BlockModeToggle from './block-mode-toggle';
 import BlockHTMLConvertButton from './block-html-convert-button';
 import BlockUnknownConvertButton from './block-unknown-convert-button';
 import __experimentalBlockSettingsMenuFirstItem from './block-settings-menu-first-item';
-import __experimentalBlockSettingsMenuPluginsExtension from './block-settings-menu-plugins-extension';
+import BlockSettingsMenuControls from '../block-settings-menu-controls';
 
 const POPOVER_PROPS = {
 	className: 'block-editor-block-settings-menu__popover',
@@ -36,12 +43,20 @@ export function BlockSettingsMenu( { clientIds } ) {
 	const firstBlockClientId = blockClientIds[ 0 ];
 
 	const shortcuts = useSelect( ( select ) => {
-		const { getShortcutRepresentation } = select( 'core/keyboard-shortcuts' );
+		const { getShortcutRepresentation } = select(
+			'core/keyboard-shortcuts'
+		);
 		return {
-			duplicate: getShortcutRepresentation( 'core/block-editor/duplicate' ),
+			duplicate: getShortcutRepresentation(
+				'core/block-editor/duplicate'
+			),
 			remove: getShortcutRepresentation( 'core/block-editor/remove' ),
-			insertAfter: getShortcutRepresentation( 'core/block-editor/insert-after' ),
-			insertBefore: getShortcutRepresentation( 'core/block-editor/insert-before' ),
+			insertAfter: getShortcutRepresentation(
+				'core/block-editor/insert-after'
+			),
+			insertBefore: getShortcutRepresentation(
+				'core/block-editor/insert-before'
+			),
 		};
 	}, [] );
 
@@ -58,7 +73,7 @@ export function BlockSettingsMenu( { clientIds } ) {
 			} ) => (
 				<Toolbar>
 					<DropdownMenu
-						icon="ellipsis"
+						icon={ moreHorizontal }
 						label={ __( 'More options' ) }
 						className="block-editor-block-settings-menu"
 						popoverProps={ POPOVER_PROPS }
@@ -81,8 +96,11 @@ export function BlockSettingsMenu( { clientIds } ) {
 									) }
 									{ canDuplicate && (
 										<MenuItem
-											onClick={ flow( onClose, onDuplicate ) }
-											icon="admin-page"
+											onClick={ flow(
+												onClose,
+												onDuplicate
+											) }
+											icon={ page }
 											shortcut={ shortcuts.duplicate }
 										>
 											{ __( 'Duplicate' ) }
@@ -91,16 +109,26 @@ export function BlockSettingsMenu( { clientIds } ) {
 									{ canInsertDefaultBlock && (
 										<>
 											<MenuItem
-												onClick={ flow( onClose, onInsertBefore ) }
-												icon="insert-before"
-												shortcut={ shortcuts.insertBefore }
+												onClick={ flow(
+													onClose,
+													onInsertBefore
+												) }
+												icon={ insertBefore }
+												shortcut={
+													shortcuts.insertBefore
+												}
 											>
 												{ __( 'Insert Before' ) }
 											</MenuItem>
 											<MenuItem
-												onClick={ flow( onClose, onInsertAfter ) }
-												icon="insert-after"
-												shortcut={ shortcuts.insertAfter }
+												onClick={ flow(
+													onClose,
+													onInsertAfter
+												) }
+												icon={ insertAfter }
+												shortcut={
+													shortcuts.insertAfter
+												}
 											>
 												{ __( 'Insert After' ) }
 											</MenuItem>
@@ -112,18 +140,25 @@ export function BlockSettingsMenu( { clientIds } ) {
 											onToggle={ onClose }
 										/>
 									) }
-									<__experimentalBlockSettingsMenuPluginsExtension.Slot
-										fillProps={ { clientIds, onClose } }
-									/>
 								</MenuGroup>
+								<BlockSettingsMenuControls.Slot
+									fillProps={ { onClose } }
+								/>
 								<MenuGroup>
 									{ ! isLocked && (
 										<MenuItem
-											onClick={ flow( onClose, onRemove ) }
-											icon="trash"
+											onClick={ flow(
+												onClose,
+												onRemove
+											) }
+											icon={ trash }
 											shortcut={ shortcuts.remove }
 										>
-											{ _n( 'Remove Block', 'Remove Blocks', count ) }
+											{ _n(
+												'Remove Block',
+												'Remove Blocks',
+												count
+											) }
 										</MenuItem>
 									) }
 								</MenuGroup>
