@@ -11,27 +11,22 @@ import { combineReducers } from '@wordpress/data';
  *
  * @return {Object} Updated state.
  */
-export const downloadableBlocks = (
-	state = {
-		results: {},
-		filterValue: undefined,
-		isRequestingDownloadableBlocks: true,
-	},
-	action
-) => {
+export const downloadableBlocks = ( state = {}, action ) => {
 	switch ( action.type ) {
 		case 'FETCH_DOWNLOADABLE_BLOCKS':
 			return {
 				...state,
-				isRequestingDownloadableBlocks: true,
+				[ action.filterValue ]: {
+					isRequesting: true,
+				},
 			};
 		case 'RECEIVE_DOWNLOADABLE_BLOCKS':
 			return {
 				...state,
-				results: Object.assign( {}, state.results, {
-					[ action.filterValue ]: action.downloadableBlocks,
-				} ),
-				isRequestingDownloadableBlocks: false,
+				[ action.filterValue ]: {
+					results: action.downloadableBlocks,
+					isRequesting: false,
+				},
 			};
 	}
 	return state;
@@ -48,6 +43,7 @@ export const downloadableBlocks = (
 export const blockManagement = (
 	state = {
 		installedBlockTypes: [],
+		isInstalling: {},
 	},
 	action
 ) => {
@@ -67,12 +63,20 @@ export const blockManagement = (
 					( blockType ) => blockType.name !== action.item.name
 				),
 			};
+		case 'SET_INSTALLING_BLOCK':
+			return {
+				...state,
+				isInstalling: {
+					...state.isInstalling,
+					[ action.blockId ]: action.isInstalling,
+				},
+			};
 	}
 	return state;
 };
 
 /**
- * Reducer returns whether the user can install blocks.
+ * Reducer returning an array of downloadable blocks.
  *
  * @param {Object} state  Current state.
  * @param {Object} action Dispatched action.
@@ -87,8 +91,28 @@ export function hasPermission( state = true, action ) {
 	return state;
 }
 
+/**
+ * Reducer returning an object of error notices.
+ *
+ * @param {Object} state  Current state.
+ * @param {Object} action Dispatched action.
+ *
+ * @return {Object} Updated state.
+ */
+export const errorNotices = ( state = {}, action ) => {
+	switch ( action.type ) {
+		case 'SET_ERROR_NOTICE':
+			return {
+				...state,
+				[ action.blockId ]: action.notice,
+			};
+	}
+	return state;
+};
+
 export default combineReducers( {
 	downloadableBlocks,
 	blockManagement,
 	hasPermission,
+	errorNotices,
 } );

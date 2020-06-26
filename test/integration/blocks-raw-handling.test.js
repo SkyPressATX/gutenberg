@@ -30,7 +30,7 @@ describe( 'Blocks raw handling', () => {
 		registerCoreBlocks();
 		registerBlockType( 'test/gallery', {
 			title: 'Test Gallery',
-			category: 'common',
+			category: 'text',
 			attributes: {
 				ids: {
 					type: 'array',
@@ -63,7 +63,7 @@ describe( 'Blocks raw handling', () => {
 
 		registerBlockType( 'test/non-inline-block', {
 			title: 'Test Non Inline Block',
-			category: 'common',
+			category: 'text',
 			supports: {
 				pasteTextInline: false,
 			},
@@ -398,11 +398,7 @@ describe( 'Blocks raw handling', () => {
 					throw new Error( `Expected fixtures for type ${ type }` );
 				}
 
-				const converted = pasteHandler( {
-					HTML,
-					plainText,
-					canUserUseUnfilteredHTML: true,
-				} );
+				const converted = pasteHandler( { HTML, plainText } );
 				const serialized =
 					typeof converted === 'string'
 						? converted

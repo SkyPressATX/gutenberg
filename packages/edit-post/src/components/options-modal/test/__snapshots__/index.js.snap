@@ -13,8 +13,8 @@ exports[`OptionsModal should match snapshot when the modal is active 1`] = `
       label="Pre-publish checks"
     />
     <WithSelect(WithDispatch(BaseOption))
-      feature="showInserterHelpPanel"
-      label="Inserter help panel"
+      featureName="mostUsedBlocks"
+      label="Enable the Most Used Blocks category in the block library"
     />
   </Section>
   <Section

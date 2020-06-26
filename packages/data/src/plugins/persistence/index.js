@@ -121,7 +121,7 @@ export function createPersistenceInterface( options ) {
  *
  * @return {WPDataPlugin} Data plugin.
  */
-const persistencePlugin = function( registry, pluginOptions ) {
+function persistencePlugin( registry, pluginOptions ) {
 	const persistence = createPersistenceInterface( pluginOptions );
 
 	/**
@@ -181,7 +181,7 @@ const persistencePlugin = function( registry, pluginOptions ) {
 			// Load from persistence to use as initial state.
 			const persistedState = persistence.get()[ reducerKey ];
 			if ( persistedState !== undefined ) {
-				let initialState = options.reducer( undefined, {
+				let initialState = options.reducer( options.initialState, {
 					type: '@@WP/PERSISTENCE_RESTORE',
 				} );
 
@@ -220,7 +220,7 @@ const persistencePlugin = function( registry, pluginOptions ) {
 			return store;
 		},
 	};
-};
+}
 
 /**
  * Deprecated: Remove this function and the code in WordPress Core that calls
@@ -246,6 +246,26 @@ persistencePlugin.__unstableMigrate = ( pluginOptions ) => {
 		} );
 	}
 
+	let editPostState = state[ 'core/edit-post' ];
+
+	// Default `fullscreenMode` to `false` if any persisted state had existed
+	// and the user hadn't made an explicit choice about fullscreen mode. This
+	// is needed since `fullscreenMode` previously did not have a default value
+	// and was implicitly false by its absence. It is now `true` by default, but
+	// this change is not intended to affect upgrades from earlier versions.
+	const hadPersistedState = Object.keys( state ).length > 0;
+	const hadFullscreenModePreference = has( state, [
+		'core/edit-post',
+		'preferences',
+		'features',
+		'fullscreenMode',
+	] );
+	if ( hadPersistedState && ! hadFullscreenModePreference ) {
+		editPostState = merge( {}, editPostState, {
+			preferences: { features: { fullscreenMode: false } },
+		} );
+	}
+
 	// Migrate 'areTipsEnabled' from 'core/nux' to 'showWelcomeGuide' in 'core/edit-post'
 	const areTipsEnabled = get( state, [
 		'core/nux',
@@ -259,16 +279,17 @@ persistencePlugin.__unstableMigrate = ( pluginOptions ) => {
 		'welcomeGuide',
 	] );
 	if ( areTipsEnabled !== undefined && ! hasWelcomeGuide ) {
-		persistence.set(
-			'core/edit-post',
-			merge( state[ 'core/edit-post' ], {
-				preferences: {
-					features: {
-						welcomeGuide: areTipsEnabled,
-					},
+		editPostState = merge( {}, editPostState, {
+			preferences: {
+				features: {
+					welcomeGuide: areTipsEnabled,
 				},
-			} )
-		);
+			},
+		} );
+	}
+
+	if ( editPostState !== state[ 'core/edit-post' ] ) {
+		persistence.set( 'core/edit-post', editPostState );
 	}
 };
 

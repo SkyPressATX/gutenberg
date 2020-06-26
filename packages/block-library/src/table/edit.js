@@ -25,14 +25,22 @@ import {
 	TextControl,
 	ToggleControl,
 	ToolbarGroup,
+	__experimentalToolbarItem as ToolbarItem,
 } from '@wordpress/components';
 import {
-	table,
-	blockTable as icon,
 	alignLeft,
 	alignRight,
 	alignCenter,
+	blockTable as icon,
+	tableColumnAfter,
+	tableColumnBefore,
+	tableColumnDelete,
+	tableRowAfter,
+	tableRowBefore,
+	tableRowDelete,
+	table,
 } from '@wordpress/icons';
+import { createBlock } from '@wordpress/blocks';
 
 /**
  * Internal dependencies
@@ -409,37 +417,37 @@ export class TableEdit extends Component {
 
 		return [
 			{
-				icon: 'table-row-before',
+				icon: tableRowBefore,
 				title: __( 'Add Row Before' ),
 				isDisabled: ! selectedCell,
 				onClick: this.onInsertRowBefore,
 			},
 			{
-				icon: 'table-row-after',
+				icon: tableRowAfter,
 				title: __( 'Add Row After' ),
 				isDisabled: ! selectedCell,
 				onClick: this.onInsertRowAfter,
 			},
 			{
-				icon: 'table-row-delete',
+				icon: tableRowDelete,
 				title: __( 'Delete Row' ),
 				isDisabled: ! selectedCell,
 				onClick: this.onDeleteRow,
 			},
 			{
-				icon: 'table-col-before',
+				icon: tableColumnBefore,
 				title: __( 'Add Column Before' ),
 				isDisabled: ! selectedCell,
 				onClick: this.onInsertColumnBefore,
 			},
 			{
-				icon: 'table-col-after',
+				icon: tableColumnAfter,
 				title: __( 'Add Column After' ),
 				isDisabled: ! selectedCell,
 				onClick: this.onInsertColumnAfter,
 			},
 			{
-				icon: 'table-col-delete',
+				icon: tableColumnDelete,
 				title: __( 'Delete Column' ),
 				isDisabled: ! selectedCell,
 				onClick: this.onDeleteColumn,
@@ -451,7 +459,7 @@ export class TableEdit extends Component {
 	 * Renders a table section.
 	 *
 	 * @param {Object} options
-	 * @param {string} options.type Section type: head, body, or foot.
+	 * @param {string} options.name Section type: head, body, or foot.
 	 * @param {Array}  options.rows The rows to render.
 	 *
 	 * @return {Object} React element for the section.
@@ -532,6 +540,7 @@ export class TableEdit extends Component {
 			backgroundColor,
 			setBackgroundColor,
 			setAttributes,
+			insertBlocksAfter,
 		} = this.props;
 		const { initialRowCount, initialColumnCount } = this.state;
 		const { hasFixedLayout, caption, head, body, foot } = attributes;
@@ -549,7 +558,7 @@ export class TableEdit extends Component {
 					instructions={ __( 'Insert a table for sharing data.' ) }
 				>
 					<form
-						className="wp-block-table__placeholder-form"
+						className="blocks-table__placeholder-form"
 						onSubmit={ this.onCreateTable }
 					>
 						<TextControl
@@ -558,7 +567,7 @@ export class TableEdit extends Component {
 							value={ initialColumnCount }
 							onChange={ this.onChangeInitialColumnCount }
 							min="1"
-							className="wp-block-table__placeholder-input"
+							className="blocks-table__placeholder-input"
 						/>
 						<TextControl
 							type="number"
@@ -566,11 +575,11 @@ export class TableEdit extends Component {
 							value={ initialRowCount }
 							onChange={ this.onChangeInitialRowCount }
 							min="1"
-							className="wp-block-table__placeholder-input"
+							className="blocks-table__placeholder-input"
 						/>
 						<Button
-							className="wp-block-table__placeholder-button"
-							isSecondary
+							className="blocks-table__placeholder-button"
+							isPrimary
 							type="submit"
 						>
 							{ __( 'Create Table' ) }
@@ -589,12 +598,17 @@ export class TableEdit extends Component {
 			<>
 				<BlockControls>
 					<ToolbarGroup>
-						<DropdownMenu
-							hasArrowIndicator
-							icon={ table }
-							label={ __( 'Edit table' ) }
-							controls={ this.getTableControls() }
-						/>
+						<ToolbarItem>
+							{ ( toggleProps ) => (
+								<DropdownMenu
+									hasArrowIndicator
+									icon={ table }
+									toggleProps={ toggleProps }
+									label={ __( 'Edit table' ) }
+									controls={ this.getTableControls() }
+								/>
+							) }
+						</ToolbarItem>
 					</ToolbarGroup>
 					<AlignmentToolbar
 						label={ __( 'Change column alignment' ) }
@@ -634,7 +648,7 @@ export class TableEdit extends Component {
 							{
 								value: backgroundColor.color,
 								onChange: setBackgroundColor,
-								label: __( 'Background Color' ),
+								label: __( 'Background color' ),
 								disableCustomColors: true,
 								colors: BACKGROUND_COLORS,
 							},
@@ -657,6 +671,9 @@ export class TableEdit extends Component {
 						// Deselect the selected table cell when the caption is focused.
 						unstableOnFocus={ () =>
 							this.setState( { selectedCell: null } )
+						}
+						__unstableOnSplitAtEnd={ () =>
+							insertBlocksAfter( createBlock( 'core/paragraph' ) )
 						}
 					/>
 				</figure>

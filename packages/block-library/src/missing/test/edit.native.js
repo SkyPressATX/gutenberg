@@ -8,7 +8,7 @@ import { Text, Platform } from 'react-native';
  * WordPress dependencies
  */
 import { BottomSheet, Icon } from '@wordpress/components';
-import { help } from '@wordpress/icons';
+import { help, plugins } from '@wordpress/icons';
 jest.mock( '@wordpress/blocks' );
 
 /**
@@ -46,7 +46,7 @@ describe( 'Missing block', () => {
 			const component = getTestComponentWithContent();
 			const testInstance = component.root;
 			const bottomSheet = testInstance.findByType( BottomSheet );
-			const children = bottomSheet.props.children.props.children;
+			const children = bottomSheet.props.children[ 0 ].props.children;
 			expect( children.length ).toBe( 3 ); // 4 children in the bottom sheet: the icon, the "isn't yet supported" title and the "We are working hard..." message
 			expect( children[ 0 ].props.icon ).toBe( help );
 		} );
@@ -55,7 +55,7 @@ describe( 'Missing block', () => {
 			const component = getTestComponentWithContent();
 			const testInstance = component.root;
 			const bottomSheet = testInstance.findByType( BottomSheet );
-			const children = bottomSheet.props.children.props.children;
+			const children = bottomSheet.props.children[ 0 ].props.children;
 			const expectedOSString = Platform.OS === 'ios' ? 'iOS' : 'Android';
 			expect( children[ 1 ].props.children ).toBe(
 				"'" +
@@ -71,7 +71,7 @@ describe( 'Missing block', () => {
 		const testInstance = component.root;
 		const icons = testInstance.findAllByType( Icon );
 		expect( icons.length ).toBe( 2 );
-		expect( icons[ 1 ].props.icon ).toBe( 'admin-plugins' );
+		expect( icons[ 1 ].props.icon ).toBe( plugins );
 	} );
 
 	it( 'renders title text without crashing', () => {

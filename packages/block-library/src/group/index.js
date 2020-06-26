@@ -29,8 +29,12 @@ export const settings = {
 	],
 	example: {
 		attributes: {
-			customBackgroundColor: '#ffffff',
-			customTextColor: '#000000',
+			style: {
+				color: {
+					text: '#000000',
+					background: '#ffffff',
+				},
+			},
 		},
 		innerBlocks: [
 			{
@@ -82,11 +86,6 @@ export const settings = {
 				},
 			},
 		],
-	},
-	supports: {
-		align: [ 'wide', 'full' ],
-		anchor: true,
-		html: false,
 	},
 	transforms: {
 		from: [
@@ -141,7 +140,6 @@ export const settings = {
 			},
 		],
 	},
-
 	edit,
 	save,
 	deprecated,

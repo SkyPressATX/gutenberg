@@ -17,7 +17,7 @@ import { useViewportMatch } from '@wordpress/compose';
 /**
  * Internal dependencies
  */
-import BlockBreadcrumb from './breadcrumb';
+import BlockSelectionButton from './block-selection-button';
 import BlockContextualToolbar from './block-contextual-toolbar';
 import Inserter from '../inserter';
 import { BlockNodes } from './root-container';
@@ -46,8 +46,6 @@ function selector( select ) {
 function BlockPopover( {
 	clientId,
 	rootClientId,
-	name,
-	align,
 	isValid,
 	moverDirection,
 	isEmptyDefaultBlock,
@@ -65,7 +63,7 @@ function BlockPopover( {
 	const isLargeViewport = useViewportMatch( 'medium' );
 	const [ isToolbarForced, setIsToolbarForced ] = useState( false );
 	const [ isInserterShown, setIsInserterShown ] = useState( false );
-	const [ blockNodes ] = useContext( BlockNodes );
+	const blockNodes = useContext( BlockNodes );
 
 	const showEmptyBlockSideInserter =
 		! isNavigationMode && isEmptyDefaultBlock && isValid;
@@ -112,11 +110,6 @@ function BlockPopover( {
 		return null;
 	}
 
-	// A block may specify a different target element for the toolbar.
-	if ( node.classList.contains( 'is-block-collapsed' ) ) {
-		node = node.querySelector( '.is-block-content' ) || node;
-	}
-
 	let anchorRef = node;
 
 	if ( hasMultiSelection ) {
@@ -160,13 +153,9 @@ function BlockPopover( {
 			className="block-editor-block-list__block-popover"
 			__unstableSticky={ ! showEmptyBlockSideInserter }
 			__unstableSlotName="block-toolbar"
-			// Allow subpixel positioning for the block movement animation.
-			__unstableAllowVerticalSubpixelPosition={
-				moverDirection !== 'horizontal' && node
-			}
-			__unstableAllowHorizontalSubpixelPosition={
-				moverDirection === 'horizontal' && node
-			}
+			__unstableBoundaryParent
+			// Observe movement for block animations (especially horizontal).
+			__unstableObserveElement={ node }
 			onBlur={ () => setIsToolbarForced( false ) }
 			shouldAnchorIncludePadding
 		>
@@ -191,6 +180,7 @@ function BlockPopover( {
 					<Inserter
 						clientId={ clientId }
 						rootClientId={ rootClientId }
+						__experimentalIsQuick
 					/>
 				</div>
 			) }
@@ -199,24 +189,22 @@ function BlockPopover( {
 					// If the toolbar is being shown because of being forced
 					// it should focus the toolbar right after the mount.
 					focusOnMount={ isToolbarForced }
-					data-type={ name }
-					data-align={ align }
 				/>
 			) }
 			{ shouldShowBreadcrumb && (
-				<BlockBreadcrumb
+				<BlockSelectionButton
 					clientId={ clientId }
 					rootClientId={ rootClientId }
 					moverDirection={ moverDirection }
-					data-align={ align }
 				/>
 			) }
 			{ showEmptyBlockSideInserter && (
 				<div className="block-editor-block-list__empty-block-inserter">
 					<Inserter
-						position="top right"
+						position="bottom right"
 						rootClientId={ rootClientId }
 						clientId={ clientId }
+						__experimentalIsQuick
 					/>
 				</div>
 			) }
@@ -274,7 +262,6 @@ function wrapperSelector( select ) {
 		clientId,
 		rootClientId: getBlockRootClientId( clientId ),
 		name,
-		align: attributes.align,
 		isValid,
 		moverDirection: __experimentalMoverDirection,
 		isEmptyDefaultBlock:
@@ -294,7 +281,6 @@ export default function WrappedBlockPopover() {
 		clientId,
 		rootClientId,
 		name,
-		align,
 		isValid,
 		moverDirection,
 		isEmptyDefaultBlock,
@@ -309,8 +295,6 @@ export default function WrappedBlockPopover() {
 		<BlockPopover
 			clientId={ clientId }
 			rootClientId={ rootClientId }
-			name={ name }
-			align={ align }
 			isValid={ isValid }
 			moverDirection={ moverDirection }
 			isEmptyDefaultBlock={ isEmptyDefaultBlock }

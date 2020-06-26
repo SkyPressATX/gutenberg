@@ -12,6 +12,7 @@ import {
 	ExternalLink,
 	Spinner,
 	VisuallyHidden,
+	createSlotFill,
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 import {
@@ -40,6 +41,10 @@ import LinkControlSettingsDrawer from './settings-drawer';
 import LinkControlSearchItem from './search-item';
 import LinkControlSearchInput from './search-input';
 import LinkControlSearchCreate from './search-create-button';
+
+const { Slot: ViewerSlot, Fill: ViewerFill } = createSlotFill(
+	'BlockEditorLinkControlViewer'
+);
 
 // Used as a unique identifier for the "Create" option within search results.
 // Used to help distinguish the "Create" suggestion within the search results in
@@ -84,11 +89,13 @@ const makeCancelable = ( promise ) => {
  *                                    providing a custom `settings` prop.
  */
 
+/* eslint-disable jsdoc/valid-types */
 /**
  * Custom settings values associated with a link.
  *
  * @typedef {{[setting:string]:any}} WPLinkControlSettingsValue
  */
+/* eslint-enable */
 
 /**
  * Custom settings values associated with a link.
@@ -99,12 +106,14 @@ const makeCancelable = ( promise ) => {
  * @property {string} title Human-readable label to show in user interface.
  */
 
+/* eslint-disable jsdoc/valid-types */
 /**
  * Properties associated with a link control value, composed as a union of the
  * default properties and any custom settings values.
  *
  * @typedef {WPLinkControlDefaultValue&WPLinkControlSettingsValue} WPLinkControlValue
  */
+/* eslint-enable */
 
 /** @typedef {(nextValue:WPLinkControlValue)=>void} WPLinkControlOnChangeProp */
 
@@ -133,6 +142,8 @@ const makeCancelable = ( promise ) => {
  * @property {WPLinkControlValue=}                  value                  Current link value.
  * @property {WPLinkControlOnChangeProp=}           onChange               Value change handler, called with the updated value if
  *                                                                         the user selects a new link or updates settings.
+ * @property {boolean=}                             noDirectEntry          Whether to disable direct entries or not.
+ * @property {boolean=}                             showSuggestions        Whether to present suggestions when typing the URL.
  * @property {boolean=}                             showInitialSuggestions Whether to present initial suggestions immediately.
  * @property {WPLinkControlCreateSuggestionProp=}   createSuggestion       Handler to manage creation of link value from suggestion.
  */
@@ -145,9 +156,12 @@ const makeCancelable = ( promise ) => {
  * @param {WPLinkControlProps} props Component props.
  */
 function LinkControl( {
+	searchInputPlaceholder,
 	value,
 	settings,
 	onChange = noop,
+	noDirectEntry = false,
+	showSuggestions = true,
 	showInitialSuggestions,
 	forceIsEditingLink,
 	createSuggestion,
@@ -238,32 +252,34 @@ function LinkControl( {
 		setInputValue( val );
 	};
 
-	const handleDirectEntry = ( val ) => {
-		let type = 'URL';
+	const handleDirectEntry = noDirectEntry
+		? () => Promise.resolve( [] )
+		: ( val ) => {
+				let type = 'URL';
 
-		const protocol = getProtocol( val ) || '';
+				const protocol = getProtocol( val ) || '';
 
-		if ( protocol.includes( 'mailto' ) ) {
-			type = 'mailto';
-		}
+				if ( protocol.includes( 'mailto' ) ) {
+					type = 'mailto';
+				}
 
-		if ( protocol.includes( 'tel' ) ) {
-			type = 'tel';
-		}
+				if ( protocol.includes( 'tel' ) ) {
+					type = 'tel';
+				}
 
-		if ( startsWith( val, '#' ) ) {
-			type = 'internal';
-		}
+				if ( startsWith( val, '#' ) ) {
+					type = 'internal';
+				}
 
-		return Promise.resolve( [
-			{
-				id: val,
-				title: val,
-				url: type === 'URL' ? prependHTTP( val ) : val,
-				type,
-			},
-		] );
-	};
+				return Promise.resolve( [
+					{
+						id: val,
+						title: val,
+						url: type === 'URL' ? prependHTTP( val ) : val,
+						type,
+					},
+				] );
+		  };
 
 	const handleEntitySearch = async ( val, args ) => {
 		let results = await Promise.all( [
@@ -282,6 +298,11 @@ function LinkControl( {
 			couldBeURL && ! args.isInitialSuggestions
 				? results[ 0 ].concat( results[ 1 ] )
 				: results[ 0 ];
+
+		// If displaying initial suggestions just return plain results.
+		if ( args.isInitialSuggestions ) {
+			return results;
+		}
 
 		// Here we append a faux suggestion to represent a "CREATE" option. This
 		// is detected in the rendering of the search results and handled as a
@@ -314,9 +335,9 @@ function LinkControl( {
 	 * the next render, if focus was within the wrapper when editing finished.
 	 */
 	function stopEditing() {
-		isEndingEditWithFocus.current =
-			!! wrapperNode.current &&
-			wrapperNode.current.contains( document.activeElement );
+		isEndingEditWithFocus.current = !! wrapperNode.current?.contains(
+			document.activeElement
+		);
 
 		setIsEditingLink( false );
 	}
@@ -339,6 +360,10 @@ function LinkControl( {
 	// Effects
 	const getSearchHandler = useCallback(
 		( val, args ) => {
+			if ( ! showSuggestions ) {
+				return Promise.resolve( [] );
+			}
+
 			return isURLLike( val )
 				? handleDirectEntry( val, args )
 				: handleEntitySearch( val, args );
@@ -392,7 +417,11 @@ function LinkControl( {
 
 	const handleSelectSuggestion = ( suggestion, _value = {} ) => {
 		setIsEditingLink( false );
-		onChange( { ..._value, ...suggestion } );
+		const __value = { ..._value };
+		// Some direct entries don't have types or IDs, and we still need to clear the previous ones.
+		delete __value.type;
+		delete __value.id;
+		onChange( { ...__value, ...suggestion } );
 	};
 
 	// Render Components
@@ -428,7 +457,11 @@ function LinkControl( {
 		const searchResultsLabelId = `block-editor-link-control-search-results-label-${ instanceId }`;
 		const labelText = isInitialSuggestions
 			? __( 'Recently updated' )
-			: sprintf( __( 'Search results for "%s"' ), inputValue );
+			: sprintf(
+					/* translators: %s: search term. */
+					__( 'Search results for "%s"' ),
+					inputValue
+			  );
 
 		// VisuallyHidden rightly doesn't accept custom classNames
 		// so we conditionally render it as a wrapper to visually hide the label
@@ -524,17 +557,23 @@ function LinkControl( {
 
 			{ ( isEditingLink || ! value ) && ! isResolvingLink && (
 				<LinkControlSearchInput
+					placeholder={ searchInputPlaceholder }
 					value={ inputValue }
 					onChange={ onInputChange }
 					onSelect={ async ( suggestion ) => {
 						if ( CREATE_TYPE === suggestion.type ) {
 							await handleOnCreate( inputValue );
-						} else {
+						} else if (
+							! noDirectEntry ||
+							Object.keys( suggestion ).length > 1
+						) {
 							handleSelectSuggestion( suggestion, value );
 							stopEditing();
 						}
 					} }
-					renderSuggestions={ renderSearchResults }
+					renderSuggestions={
+						showSuggestions ? renderSearchResults : null
+					}
 					fetchSuggestions={ getSearchHandler }
 					showInitialSuggestions={ showInitialSuggestions }
 					errorMessage={ errorMessage }
@@ -574,6 +613,7 @@ function LinkControl( {
 						>
 							{ __( 'Edit' ) }
 						</Button>
+						<ViewerSlot fillProps={ value } />
 					</div>
 				</Fragment>
 			) }
@@ -585,5 +625,7 @@ function LinkControl( {
 		</div>
 	);
 }
+
+LinkControl.ViewerFill = ViewerFill;
 
 export default LinkControl;

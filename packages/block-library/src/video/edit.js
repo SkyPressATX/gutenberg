@@ -18,12 +18,14 @@ import {
 	MediaUploadCheck,
 	MediaReplaceFlow,
 	RichText,
+	__experimentalBlock as Block,
 } from '@wordpress/block-editor';
 import { Component, createRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { compose, withInstanceId } from '@wordpress/compose';
 import { withSelect } from '@wordpress/data';
 import { video as icon } from '@wordpress/icons';
+import { createBlock } from '@wordpress/blocks';
 
 /**
  * Internal dependencies
@@ -115,12 +117,12 @@ class VideoEdit extends Component {
 	render() {
 		const { id, caption, controls, poster, src } = this.props.attributes;
 		const {
-			className,
 			instanceId,
 			isSelected,
 			noticeUI,
 			attributes,
 			setAttributes,
+			insertBlocksAfter,
 		} = this.props;
 		const onSelectVideo = ( media ) => {
 			if ( ! media || ! media.url ) {
@@ -137,17 +139,18 @@ class VideoEdit extends Component {
 
 		if ( ! src ) {
 			return (
-				<MediaPlaceholder
-					icon={ <BlockIcon icon={ icon } /> }
-					className={ className }
-					onSelect={ onSelectVideo }
-					onSelectURL={ this.onSelectURL }
-					accept="video/*"
-					allowedTypes={ ALLOWED_MEDIA_TYPES }
-					value={ this.props.attributes }
-					notices={ noticeUI }
-					onError={ this.onUploadError }
-				/>
+				<Block.div>
+					<MediaPlaceholder
+						icon={ <BlockIcon icon={ icon } /> }
+						onSelect={ onSelectVideo }
+						onSelectURL={ this.onSelectURL }
+						accept="video/*"
+						allowedTypes={ ALLOWED_MEDIA_TYPES }
+						value={ this.props.attributes }
+						notices={ noticeUI }
+						onError={ this.onUploadError }
+					/>
+				</Block.div>
 			);
 		}
 		const videoPosterDescription = `video-block__poster-image-description-${ instanceId }`;
@@ -174,17 +177,17 @@ class VideoEdit extends Component {
 						<MediaUploadCheck>
 							<BaseControl className="editor-video-poster-control">
 								<BaseControl.VisualLabel>
-									{ __( 'Poster Image' ) }
+									{ __( 'Poster image' ) }
 								</BaseControl.VisualLabel>
 								<MediaUpload
-									title={ __( 'Select Poster Image' ) }
+									title={ __( 'Select poster image' ) }
 									onSelect={ this.onSelectPoster }
 									allowedTypes={
 										VIDEO_POSTER_ALLOWED_MEDIA_TYPES
 									}
 									render={ ( { open } ) => (
 										<Button
-											isSecondary
+											isPrimary
 											onClick={ open }
 											ref={ this.posterImageButton }
 											aria-describedby={
@@ -192,14 +195,15 @@ class VideoEdit extends Component {
 											}
 										>
 											{ ! this.props.attributes.poster
-												? __( 'Select Poster Image' )
-												: __( 'Replace image' ) }
+												? __( 'Select' )
+												: __( 'Replace' ) }
 										</Button>
 									) }
 								/>
 								<p id={ videoPosterDescription } hidden>
 									{ this.props.attributes.poster
 										? sprintf(
+												/* translators: %s: poster image URL. */
 												__(
 													'The current poster image url is %s'
 												),
@@ -212,17 +216,16 @@ class VideoEdit extends Component {
 								{ !! this.props.attributes.poster && (
 									<Button
 										onClick={ this.onRemovePoster }
-										isLink
-										isDestructive
+										isTertiary
 									>
-										{ __( 'Remove Poster Image' ) }
+										{ __( 'Remove' ) }
 									</Button>
 								) }
 							</BaseControl>
 						</MediaUploadCheck>
 					</PanelBody>
 				</InspectorControls>
-				<figure className={ className }>
+				<Block.figure>
 					{ /*
 						Disable the video tag so the user clicking on it won't play the
 						video when the controls are enabled.
@@ -244,9 +247,14 @@ class VideoEdit extends Component {
 								setAttributes( { caption: value } )
 							}
 							inlineToolbar
+							__unstableOnSplitAtEnd={ () =>
+								insertBlocksAfter(
+									createBlock( 'core/paragraph' )
+								)
+							}
 						/>
 					) }
-				</figure>
+				</Block.figure>
 			</>
 		);
 	}

@@ -58,15 +58,12 @@ export default function ColorPalette( {
 			/>
 		) );
 	}, [ colors, value, onChange, clearColor ] );
-	const renderCustomColorPicker = useCallback(
-		() => (
-			<ColorPicker
-				color={ value }
-				onChangeComplete={ ( color ) => onChange( color.hex ) }
-				disableAlpha
-			/>
-		),
-		[ value ]
+	const renderCustomColorPicker = () => (
+		<ColorPicker
+			color={ value }
+			onChangeComplete={ ( color ) => onChange( color.hex ) }
+			disableAlpha
+		/>
 	);
 
 	return (
@@ -85,7 +82,7 @@ export default function ColorPalette( {
 							buttonProps={ {
 								'aria-label': __( 'Custom color picker' ),
 							} }
-							linkText={ __( 'Custom Color' ) }
+							linkText={ __( 'Custom color' ) }
 						/>
 					) }
 					{ !! clearable && (

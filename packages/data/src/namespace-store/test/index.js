@@ -14,7 +14,7 @@ describe( 'controls', () => {
 	describe( 'should call registry-aware controls', () => {
 		it( 'registers multiple selectors to the public API', () => {
 			const action1 = jest.fn( () => ( { type: 'NOTHING' } ) );
-			const action2 = function*() {
+			const action2 = function* () {
 				yield { type: 'DISPATCH', store: 'store1', action: 'action1' };
 			};
 			registry.registerStore( 'store1', {
@@ -42,7 +42,7 @@ describe( 'controls', () => {
 		} );
 	} );
 
-	it( 'resolves in expected order', ( done ) => {
+	it( 'resolves in expected order', async () => {
 		const actions = {
 			wait: () => ( { type: 'WAIT' } ),
 			receive: ( items ) => ( { type: 'RECEIVE', items } ),
@@ -74,21 +74,23 @@ describe( 'controls', () => {
 			},
 		} );
 
-		registry.subscribe( () => {
-			const isFinished = registry
-				.select( 'store' )
-				.hasFinishedResolution( 'getItems' );
-			if ( isFinished ) {
-				expect( registry.select( 'store' ).getItems() ).toEqual( [
-					1,
-					2,
-					3,
-				] );
-				done();
-			}
-		} );
+		return new Promise( ( resolve ) => {
+			registry.subscribe( () => {
+				const isFinished = registry
+					.select( 'store' )
+					.hasFinishedResolution( 'getItems' );
+				if ( isFinished ) {
+					expect( registry.select( 'store' ).getItems() ).toEqual( [
+						1,
+						2,
+						3,
+					] );
+				}
+				resolve();
+			} );
 
-		registry.select( 'store' ).getItems();
+			registry.select( 'store' ).getItems();
+		} );
 	} );
 	describe( 'selectors have expected value for the `hasResolver` property', () => {
 		it( 'when custom store has resolvers defined', () => {

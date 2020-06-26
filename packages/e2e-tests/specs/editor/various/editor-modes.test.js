@@ -18,13 +18,9 @@ describe( 'Editing modes (visual/HTML)', () => {
 	it( 'should switch between visual and HTML modes', async () => {
 		// This block should be in "visual" mode by default.
 		let visualBlock = await page.$$(
-			'.block-editor-block-list__layout .block-editor-block-list__block .rich-text'
+			'.block-editor-block-list__layout .block-editor-block-list__block.rich-text'
 		);
 		expect( visualBlock ).toHaveLength( 1 );
-
-		// Move the mouse to show the block toolbar
-		await page.mouse.move( 0, 0 );
-		await page.mouse.move( 10, 10 );
 
 		// Change editing mode from "Visual" to "HTML".
 		await clickBlockToolbarButton( 'More options' );
@@ -39,10 +35,6 @@ describe( 'Editing modes (visual/HTML)', () => {
 		);
 		expect( htmlBlock ).toHaveLength( 1 );
 
-		// Move the mouse to show the block toolbar
-		await page.mouse.move( 0, 0 );
-		await page.mouse.move( 10, 10 );
-
 		// Change editing mode from "HTML" back to "Visual".
 		await clickBlockToolbarButton( 'More options' );
 		changeModeButton = await page.waitForXPath(
@@ -52,16 +44,12 @@ describe( 'Editing modes (visual/HTML)', () => {
 
 		// This block should be in "visual" mode by default.
 		visualBlock = await page.$$(
-			'.block-editor-block-list__layout .block-editor-block-list__block .rich-text'
+			'.block-editor-block-list__layout .block-editor-block-list__block.rich-text'
 		);
 		expect( visualBlock ).toHaveLength( 1 );
 	} );
 
 	it( 'should display sidebar in HTML mode', async () => {
-		// Move the mouse to show the block toolbar
-		await page.mouse.move( 0, 0 );
-		await page.mouse.move( 10, 10 );
-
 		// Change editing mode from "Visual" to "HTML".
 		await clickBlockToolbarButton( 'More options' );
 		const changeModeButton = await page.waitForXPath(
@@ -78,10 +66,6 @@ describe( 'Editing modes (visual/HTML)', () => {
 	} );
 
 	it( 'should update HTML in HTML mode when sidebar is used', async () => {
-		// Move the mouse to show the block toolbar
-		await page.mouse.move( 0, 0 );
-		await page.mouse.move( 10, 10 );
-
 		// Change editing mode from "Visual" to "HTML".
 		await clickBlockToolbarButton( 'More options' );
 		const changeModeButton = await page.waitForXPath(
@@ -146,7 +130,7 @@ describe( 'Editing modes (visual/HTML)', () => {
 
 		// The inserter is disabled
 		const disabledInserter = await page.$(
-			'.block-editor-inserter > button:disabled, .block-editor-inserter > button[aria-disabled="true"]'
+			'.edit-post-header-toolbar__inserter-toggle:disabled, .edit-post-header-toolbar__inserter-toggle[aria-disabled="true"]'
 		);
 		expect( disabledInserter ).not.toBeNull();
 	} );

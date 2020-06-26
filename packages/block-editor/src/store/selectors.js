@@ -42,27 +42,6 @@ import { SVG, Rect, G, Path } from '@wordpress/components';
  */
 
 // Module constants
-
-/**
- * @private
- */
-export const INSERTER_UTILITY_HIGH = 3;
-
-/**
- * @private
- */
-export const INSERTER_UTILITY_MEDIUM = 2;
-
-/**
- * @private
- */
-export const INSERTER_UTILITY_LOW = 1;
-
-/**
- * @private
- */
-export const INSERTER_UTILITY_NONE = 0;
-
 const MILLISECONDS_PER_HOUR = 3600 * 1000;
 const MILLISECONDS_PER_DAY = 24 * 3600 * 1000;
 const MILLISECONDS_PER_WEEK = 7 * 24 * 3600 * 1000;
@@ -137,6 +116,16 @@ export function getBlockAttributes( state, clientId ) {
  * is not the block's registration settings, which must be retrieved from the
  * blocks module registration store.
  *
+ * getBlock recurses through its inner blocks until all its children blocks have
+ * been retrieved. Note that getBlock will not return the child inner blocks of
+ * an inner block controller. This is because an inner block controller syncs
+ * itself with its own entity, and should therefore not be included with the
+ * blocks of a different entity. For example, say you call `getBlocks( TP )` to
+ * get the blocks of a template part. If another template part is a child of TP,
+ * then the nested template part's child blocks will not be returned. This way,
+ * the template block itself is considered part of the parent, but the children
+ * are not.
+ *
  * @param {Object} state    Editor state.
  * @param {string} clientId Block client ID.
  *
@@ -152,7 +141,9 @@ export const getBlock = createSelector(
 		return {
 			...block,
 			attributes: getBlockAttributes( state, clientId ),
-			innerBlocks: getBlocks( state, clientId ),
+			innerBlocks: areInnerBlocksControlled( state, clientId )
+				? EMPTY_ARRAY
+				: getBlocks( state, clientId ),
 		};
 	},
 	( state, clientId ) => [
@@ -185,10 +176,14 @@ export const __unstableGetBlockWithoutInnerBlocks = createSelector(
 
 /**
  * Returns all block objects for the current post being edited as an array in
- * the order they appear in the post.
+ * the order they appear in the post. Note that this will exclude child blocks
+ * of nested inner block controllers.
  *
  * Note: It's important to memoize this selector to avoid return a new instance
- * on each call
+ * on each call. We use the block cache state for each top-level block of the
+ * given clientID. This way, the selector only refreshes on changes to blocks
+ * associated with the given entity, and does not refresh when changes are made
+ * to blocks which are part of different inner block controllers.
  *
  * @param {Object}  state        Editor state.
  * @param {?string} rootClientId Optional root client ID of block list.
@@ -201,11 +196,11 @@ export const getBlocks = createSelector(
 			getBlock( state, clientId )
 		);
 	},
-	( state ) => [
-		state.blocks.byClientId,
-		state.blocks.order,
-		state.blocks.attributes,
-	]
+	( state, rootClientId ) =>
+		map(
+			state.blocks.order[ rootClientId || '' ],
+			( id ) => state.blocks.cache[ id ]
+		)
 );
 
 /**
@@ -1208,6 +1203,22 @@ export const canInsertBlockType = createSelector(
 );
 
 /**
+ * Determines if the given blocks are allowed to be inserted into the block
+ * list.
+ *
+ * @param {Object}  state        Editor state.
+ * @param {string}  clientIds    The block client IDs to be inserted.
+ * @param {?string} rootClientId Optional root client ID of block list.
+ *
+ * @return {boolean} Whether the given blocks are allowed to be inserted.
+ */
+export function canInsertBlocks( state, clientIds, rootClientId = null ) {
+	return clientIds.every( ( id ) =>
+		canInsertBlockType( state, getBlockName( state, id ), rootClientId )
+	);
+}
+
+/**
  * Returns information about how recently and frequently a block has been inserted.
  *
  * @param {Object} state Global application state.
@@ -1245,14 +1256,6 @@ const canIncludeBlockTypeInInserter = ( state, blockType, rootClientId ) => {
  * Each item object contains what's necessary to display a button in the
  * inserter and handle its selection.
  *
- * The 'utility' property indicates how useful we think an item will be to the
- * user. There are 4 levels of utility:
- *
- * 1. Blocks that are contextually useful (utility = 3)
- * 2. Blocks that have been previously inserted (utility = 2)
- * 3. Blocks that are in the common category (utility = 1)
- * 4. All other blocks (utility = 0)
- *
  * The 'frecency' property is a heuristic (https://en.wikipedia.org/wiki/Frecency)
  * that combines block usage frequenty and recency.
  *
@@ -1273,22 +1276,10 @@ const canIncludeBlockTypeInInserter = ( state, blockType, rootClientId ) => {
  * @property {string[]} keywords          Keywords that can be searched to find this item.
  * @property {boolean}  isDisabled        Whether or not the user should be prevented from inserting
  *                                        this item.
- * @property {number}   utility           How useful we think this item is, between 0 and 3.
  * @property {number}   frecency          Hueristic that combines frequency and recency.
  */
 export const getInserterItems = createSelector(
 	( state, rootClientId = null ) => {
-		const calculateUtility = ( category, count, isContextual ) => {
-			if ( isContextual ) {
-				return INSERTER_UTILITY_HIGH;
-			} else if ( count > 0 ) {
-				return INSERTER_UTILITY_MEDIUM;
-			} else if ( category === 'common' ) {
-				return INSERTER_UTILITY_LOW;
-			}
-			return INSERTER_UTILITY_NONE;
-		};
-
 		const calculateFrecency = ( time, count ) => {
 			if ( ! time ) {
 				return count;
@@ -1326,7 +1317,6 @@ export const getInserterItems = createSelector(
 				);
 			}
 
-			const isContextual = isArray( blockType.parent );
 			const { time, count = 0 } = getInsertUsage( state, id ) || {};
 			const inserterVariations = blockType.variations.filter(
 				( { scope } ) => ! scope || scope.includes( 'inserter' )
@@ -1344,11 +1334,7 @@ export const getInserterItems = createSelector(
 				variations: inserterVariations,
 				example: blockType.example,
 				isDisabled,
-				utility: calculateUtility(
-					blockType.category,
-					count,
-					isContextual
-				),
+				utility: 1, // deprecated
 				frecency: calculateFrecency( time, count ),
 			};
 		};
@@ -1368,7 +1354,6 @@ export const getInserterItems = createSelector(
 			}
 
 			const { time, count = 0 } = getInsertUsage( state, id ) || {};
-			const utility = calculateUtility( 'reusable', count, false );
 			const frecency = calculateFrecency( time, count );
 
 			return {
@@ -1382,7 +1367,7 @@ export const getInserterItems = createSelector(
 				category: 'reusable',
 				keywords: [],
 				isDisabled: false,
-				utility,
+				utility: 1, // deprecated
 				frecency,
 			};
 		};
@@ -1403,7 +1388,7 @@ export const getInserterItems = createSelector(
 
 		return orderBy(
 			[ ...blockTypeInserterItems, ...reusableBlockInserterItems ],
-			[ 'utility', 'frecency' ],
+			[ 'frecency' ],
 			[ 'desc', 'desc' ]
 		);
 	},
@@ -1612,6 +1597,17 @@ export function isNavigationMode( state ) {
 }
 
 /**
+ * Returns whether block moving mode is enabled.
+ *
+ * @param {Object} state Editor state.
+ *
+ * @return {string}     Client Id of moving block.
+ */
+export function hasBlockMovingClientId( state ) {
+	return state.hasBlockMovingClientId;
+}
+
+/**
  * Returns true if the last change was an automatic change, false otherwise.
  *
  * @param {Object} state Global application state.
@@ -1623,12 +1619,25 @@ export function didAutomaticChange( state ) {
 }
 
 /**
- * Returns the current editing canvas device type.
+ * Returns true if the current highlighted block matches the block clientId.
  *
  * @param {Object} state Global application state.
+ * @param {string} clientId The block to check.
  *
- * @return {string} Device type.
+ * @return {boolean} Whether the block is currently highlighted.
  */
-export function getPreviewDeviceType( state ) {
-	return state.deviceType;
+export function isBlockHighlighted( state, clientId ) {
+	return state.highlightedBlock === clientId;
+}
+
+/**
+ * Checks if a given block has controlled inner blocks.
+ *
+ * @param {Object} state Global application state.
+ * @param {string} clientId The block to check.
+ *
+ * @return {boolean} True if the block has controlled inner blocks.
+ */
+export function areInnerBlocksControlled( state, clientId ) {
+	return !! state.blocks.controlledInnerBlocks[ clientId ];
 }

@@ -21,15 +21,20 @@ describe( 'cpt locking', () => {
 		await deactivatePlugin( 'gutenberg-test-plugin-cpt-locking' );
 	} );
 
-	const shouldRemoveTheInserter = async () => {
+	const shouldDisableTheInserter = async () => {
 		expect(
-			await page.$( '.edit-post-header [aria-label="Add block"]' )
-		).toBeNull();
+			await page.evaluate( () => {
+				const inserter = document.querySelector(
+					'.edit-post-header [aria-label="Add block"]'
+				);
+				return inserter.getAttribute( 'disabled' );
+			} )
+		).not.toBeNull();
 	};
 
 	const shouldNotAllowBlocksToBeRemoved = async () => {
 		await page.type(
-			'.block-editor-rich-text__editable.wp-block-paragraph',
+			'.block-editor-rich-text__editable[data-type="core/paragraph"]',
 			'p1'
 		);
 		await clickBlockToolbarButton( 'More options' );
@@ -40,12 +45,12 @@ describe( 'cpt locking', () => {
 
 	const shouldAllowBlocksToBeMoved = async () => {
 		await page.click(
-			'.block-editor-rich-text__editable.wp-block-paragraph'
+			'.block-editor-rich-text__editable[data-type="core/paragraph"]'
 		);
 		expect( await page.$( 'button[aria-label="Move up"]' ) ).not.toBeNull();
 		await page.click( 'button[aria-label="Move up"]' );
 		await page.type(
-			'.block-editor-rich-text__editable.wp-block-paragraph',
+			'.block-editor-rich-text__editable[data-type="core/paragraph"]',
 			'p1'
 		);
 		expect( await getEditedPostContent() ).toMatchSnapshot();
@@ -56,7 +61,7 @@ describe( 'cpt locking', () => {
 			await createNewPost( { postType: 'locked-all-post' } );
 		} );
 
-		it( 'should remove the inserter', shouldRemoveTheInserter );
+		it( 'should disable the inserter', shouldDisableTheInserter );
 
 		it(
 			'should not allow blocks to be removed',
@@ -65,14 +70,14 @@ describe( 'cpt locking', () => {
 
 		it( 'should not allow blocks to be moved', async () => {
 			await page.click(
-				'.block-editor-rich-text__editable.wp-block-paragraph'
+				'.block-editor-rich-text__editable[data-type="core/paragraph"]'
 			);
 			expect( await page.$( 'button[aria-label="Move up"]' ) ).toBeNull();
 		} );
 
 		it( 'should not error when deleting the cotents of a paragraph', async () => {
 			await page.click(
-				'.block-editor-block-list__block[data-type="core/paragraph"] p'
+				'.block-editor-block-list__block[data-type="core/paragraph"]'
 			);
 			const textToType = 'Paragraph';
 			await page.keyboard.type( 'Paragraph' );
@@ -98,6 +103,24 @@ describe( 'cpt locking', () => {
 				'The content of your post doesn’t match the template assigned to your post type.'
 			);
 		} );
+
+		it( 'can use the global inserter in inner blocks', async () => {
+			await page.click( 'button[aria-label="Two columns; equal split"]' );
+			await page.click(
+				'.wp-block-column .block-editor-button-block-appender'
+			);
+			await page.type( '.block-editor-inserter__search-input', 'image' );
+			await pressKeyTimes( 'Tab', 2 );
+			await page.keyboard.press( 'Enter' );
+			await page.click( '.edit-post-header-toolbar__inserter-toggle' );
+			await page.type(
+				'.block-editor-inserter__search-input',
+				'gallery'
+			);
+			await pressKeyTimes( 'Tab', 2 );
+			await page.keyboard.press( 'Enter' );
+			expect( await page.$( '.wp-block-gallery' ) ).not.toBeNull();
+		} );
 	} );
 
 	describe( 'template_lock insert', () => {
@@ -105,7 +128,7 @@ describe( 'cpt locking', () => {
 			await createNewPost( { postType: 'locked-insert-post' } );
 		} );
 
-		it( 'should remove the inserter', shouldRemoveTheInserter );
+		it( 'should disable the inserter', shouldDisableTheInserter );
 
 		it(
 			'should not allow blocks to be removed',
@@ -131,7 +154,7 @@ describe( 'cpt locking', () => {
 
 		it( 'should allow blocks to be removed', async () => {
 			await page.type(
-				'.block-editor-rich-text__editable.wp-block-paragraph',
+				'.block-editor-rich-text__editable[data-type="core/paragraph"]',
 				'p1'
 			);
 			await clickBlockToolbarButton( 'More options' );

@@ -58,19 +58,12 @@ export const settings = {
 			return alt + ( caption ? '. ' + caption : '' );
 		}
 	},
-	transforms,
 	getEditWrapperProps( attributes ) {
-		const { align, width } = attributes;
-		if (
-			'left' === align ||
-			'center' === align ||
-			'right' === align ||
-			'wide' === align ||
-			'full' === align
-		) {
-			return { 'data-align': align, 'data-resized': !! width };
-		}
+		return {
+			'data-align': attributes.align,
+		};
 	},
+	transforms,
 	edit,
 	save,
 	deprecated,

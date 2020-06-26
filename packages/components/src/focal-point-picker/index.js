@@ -111,7 +111,7 @@ export class FocalPointPicker extends Component {
 					( pickerDimensions.height - bounds.top * 2 )
 				).toFixed( 2 ),
 			};
-			this.setState( { percentages }, function() {
+			this.setState( { percentages }, function () {
 				onChange( {
 					x: this.state.percentages.x,
 					y: this.state.percentages.y,
@@ -135,7 +135,7 @@ export class FocalPointPicker extends Component {
 		percentages[ axis ] = ( cleanValue ? cleanValue / 100 : 0 ).toFixed(
 			2
 		);
-		this.setState( { percentages }, function() {
+		this.setState( { percentages }, function () {
 			onChange( {
 				x: this.state.percentages.x,
 				y: this.state.percentages.y,
@@ -243,7 +243,7 @@ export class FocalPointPicker extends Component {
 				</div>
 				<div className="components-focal-point-picker_position-display-container">
 					<BaseControl
-						label={ __( 'Horizontal Pos.' ) }
+						label={ __( 'Horizontal pos.' ) }
 						id={ horizontalPositionId }
 					>
 						<input
@@ -258,7 +258,7 @@ export class FocalPointPicker extends Component {
 						<span>%</span>
 					</BaseControl>
 					<BaseControl
-						label={ __( 'Vertical Pos.' ) }
+						label={ __( 'Vertical pos.' ) }
 						id={ verticalPositionId }
 					>
 						<input

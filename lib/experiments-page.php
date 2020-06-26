@@ -52,14 +52,14 @@ function gutenberg_initialize_experiments_settings() {
 		)
 	);
 	add_settings_field(
-		'gutenberg-block-directory',
-		__( 'Block Directory', 'gutenberg' ),
+		'gutenberg-navigation',
+		__( 'Navigation', 'gutenberg' ),
 		'gutenberg_display_experiment_field',
 		'gutenberg-experiments',
 		'gutenberg_experiments_section',
 		array(
-			'label' => __( 'Enable block directory search', 'gutenberg' ),
-			'id'    => 'gutenberg-block-directory',
+			'label' => __( 'Enable Navigation screen', 'gutenberg' ),
+			'id'    => 'gutenberg-navigation',
 		)
 	);
 	add_settings_field(
@@ -132,7 +132,6 @@ function gutenberg_display_experiment_section() {
 function gutenberg_experiments_editor_settings( $settings ) {
 	$experiments_settings = array(
 		'__experimentalEnableLegacyWidgetBlock'   => gutenberg_is_experiment_enabled( 'gutenberg-widget-experiments' ),
-		'__experimentalBlockDirectory'            => gutenberg_is_experiment_enabled( 'gutenberg-block-directory' ),
 		'__experimentalEnableFullSiteEditing'     => gutenberg_is_experiment_enabled( 'gutenberg-full-site-editing' ),
 		'__experimentalEnableFullSiteEditingDemo' => gutenberg_is_experiment_enabled( 'gutenberg-full-site-editing-demo' ),
 	);

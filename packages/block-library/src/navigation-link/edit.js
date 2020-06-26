@@ -28,6 +28,7 @@ import {
 	InspectorControls,
 	RichText,
 	__experimentalLinkControl as LinkControl,
+	__experimentalBlock as Block,
 } from '@wordpress/block-editor';
 import { isURL, prependHTTP } from '@wordpress/url';
 import { Fragment, useState, useEffect, useRef } from '@wordpress/element';
@@ -43,6 +44,7 @@ function NavigationLinkEdit( {
 	attributes,
 	hasDescendants,
 	isSelected,
+	isImmediateParentOfSelectedBlock,
 	isParentOfSelectedBlock,
 	setAttributes,
 	showSubmenuIcon,
@@ -52,7 +54,11 @@ function NavigationLinkEdit( {
 	rgbTextColor,
 	rgbBackgroundColor,
 	saveEntityRecord,
+	selectedBlockHasDescendants,
 	userCanCreatePages = false,
+	insertBlocksAfter,
+	mergeBlocks,
+	onReplace,
 } ) {
 	const { label, opensInNewTab, url, nofollow, description } = attributes;
 	const link = {
@@ -101,7 +107,7 @@ function NavigationLinkEdit( {
 	}, [ url ] );
 
 	/**
-	 * Focus the navigation link label text and select it.
+	 * Focus the Link label text and select it.
 	 */
 	function selectLabelText() {
 		ref.current.focus();
@@ -192,8 +198,8 @@ function NavigationLinkEdit( {
 					/>
 				</PanelBody>
 			</InspectorControls>
-			<div
-				className={ classnames( 'wp-block-navigation-link', {
+			<Block.li
+				className={ classnames( {
 					'is-editing': isSelected || isParentOfSelectedBlock,
 					'is-selected': isSelected,
 					'has-link': !! url,
@@ -211,13 +217,21 @@ function NavigationLinkEdit( {
 				<div className="wp-block-navigation-link__content">
 					<RichText
 						ref={ ref }
-						tagName="span"
+						identifier="label"
 						className="wp-block-navigation-link__label"
 						value={ label }
 						onChange={ ( labelValue ) =>
 							setAttributes( { label: labelValue } )
 						}
+						onMerge={ mergeBlocks }
+						onReplace={ onReplace }
+						__unstableOnSplitAtEnd={ () =>
+							insertBlocksAfter(
+								createBlock( 'core/navigation-link' )
+							)
+						}
 						placeholder={ itemLabelPlaceholder }
+						keepPlaceholderOnFocus
 						withoutInteractiveFormatting
 						allowedFormats={ [
 							'core/bold',
@@ -226,11 +240,6 @@ function NavigationLinkEdit( {
 							'core/strikethrough',
 						] }
 					/>
-					{ showSubmenuIcon && (
-						<span className="wp-block-navigation-link__submenu-icon">
-							<ItemSubmenuIcon />
-						</span>
-					) }
 					{ isLinkOpen && (
 						<Popover
 							position="bottom center"
@@ -283,16 +292,32 @@ function NavigationLinkEdit( {
 						</Popover>
 					) }
 				</div>
+				{ showSubmenuIcon && (
+					<span className="wp-block-navigation-link__submenu-icon">
+						<ItemSubmenuIcon />
+					</span>
+				) }
 				<InnerBlocks
 					allowedBlocks={ [ 'core/navigation-link' ] }
 					renderAppender={
-						( hasDescendants && isSelected ) ||
-						isParentOfSelectedBlock
+						( isSelected && hasDescendants ) ||
+						( isImmediateParentOfSelectedBlock &&
+							! selectedBlockHasDescendants )
 							? InnerBlocks.DefaultAppender
 							: false
 					}
+					__experimentalTagName="ul"
+					__experimentalAppenderTagName="li"
+					__experimentalPassedProps={ {
+						className: classnames(
+							'wp-block-navigation__container',
+							{
+								'is-parent-of-selected-block': isParentOfSelectedBlock,
+							}
+						),
+					} }
 				/>
-			</div>
+			</Block.li>
 		</Fragment>
 	);
 }
@@ -325,6 +350,7 @@ export default compose( [
 			getClientIdsOfDescendants,
 			hasSelectedInnerBlock,
 			getBlockParentsByBlockName,
+			getSelectedBlockClientId,
 			getSettings,
 		} = select( 'core/block-editor' );
 		const { clientId } = ownProps;
@@ -338,6 +364,14 @@ export default compose( [
 		const showSubmenuIcon =
 			!! navigationBlockAttributes.showSubmenuIcon && hasDescendants;
 		const isParentOfSelectedBlock = hasSelectedInnerBlock( clientId, true );
+		const isImmediateParentOfSelectedBlock = hasSelectedInnerBlock(
+			clientId,
+			false
+		);
+		const selectedBlockId = getSelectedBlockClientId();
+		const selectedBlockHasDescendants = !! getClientIdsOfDescendants( [
+			selectedBlockId,
+		] )?.length;
 
 		const userCanCreatePages = select( 'core' ).canUser(
 			'create',
@@ -346,7 +380,9 @@ export default compose( [
 
 		return {
 			isParentOfSelectedBlock,
+			isImmediateParentOfSelectedBlock,
 			hasDescendants,
+			selectedBlockHasDescendants,
 			showSubmenuIcon,
 			textColor: navigationBlockAttributes.textColor,
 			backgroundColor: navigationBlockAttributes.backgroundColor,

@@ -2,19 +2,17 @@
  * External dependencies
  */
 import { castArray, first, get, includes, last, some } from 'lodash';
-
 /**
  * WordPress dependencies
  */
 import {
-	getDefaultBlockName,
-	createBlock,
-	hasBlockSupport,
 	cloneBlock,
+	createBlock,
+	getDefaultBlockName,
+	hasBlockSupport,
 } from '@wordpress/blocks';
 import { speak } from '@wordpress/a11y';
 import { __ } from '@wordpress/i18n';
-
 /**
  * Internal dependencies
  */
@@ -32,7 +30,7 @@ function* ensureDefaultBlock() {
 	// To avoid a focus loss when removing the last block, assure there is
 	// always a default block if the last of the blocks have been removed.
 	if ( count === 0 ) {
-		yield insertDefaultBlock();
+		return yield insertDefaultBlock();
 	}
 }
 
@@ -97,18 +95,18 @@ export function receiveBlocks( blocks ) {
 }
 
 /**
- * Returns an action object used in signalling that the block attributes with
- * the specified client ID has been updated.
+ * Returns an action object used in signalling that the multiple blocks'
+ * attributes with the specified client IDs have been updated.
  *
- * @param {string} clientId   Block client ID.
- * @param {Object} attributes Block attributes to be merged.
+ * @param {string|string[]} clientIds  Block client IDs.
+ * @param {Object}          attributes Block attributes to be merged.
  *
  * @return {Object} Action object.
  */
-export function updateBlockAttributes( clientId, attributes ) {
+export function updateBlockAttributes( clientIds, attributes ) {
 	return {
 		type: 'UPDATE_BLOCK_ATTRIBUTES',
-		clientId,
+		clientIds: castArray( clientIds ),
 		attributes,
 	};
 }
@@ -165,6 +163,7 @@ export function* selectPreviousBlock( clientId ) {
 
 	if ( previousBlockClientId ) {
 		yield selectBlock( previousBlockClientId, -1 );
+		return [ previousBlockClientId ];
 	}
 }
 
@@ -183,6 +182,7 @@ export function* selectNextBlock( clientId ) {
 
 	if ( nextBlockClientId ) {
 		yield selectBlock( nextBlockClientId );
+		return [ nextBlockClientId ];
 	}
 }
 
@@ -258,6 +258,9 @@ function getBlocksWithDefaultStylesApplied( blocks, blockEditorSettings ) {
 	);
 	return blocks.map( ( block ) => {
 		const blockName = block.name;
+		if ( ! hasBlockSupport( blockName, 'defaultStylePicker', true ) ) {
+			return block;
+		}
 		if ( ! preferredStyleVariations[ blockName ] ) {
 			return block;
 		}
@@ -271,8 +274,9 @@ function getBlocksWithDefaultStylesApplied( blocks, blockEditorSettings ) {
 			...block,
 			attributes: {
 				...attributes,
-				className: `${ className ||
-					'' } is-style-${ blockStyle }`.trim(),
+				className: `${
+					className || ''
+				} is-style-${ blockStyle }`.trim(),
 			},
 		};
 	} );
@@ -284,12 +288,17 @@ function getBlocksWithDefaultStylesApplied( blocks, blockEditorSettings ) {
  *
  * @param {(string|string[])} clientIds     Block client ID(s) to replace.
  * @param {(Object|Object[])} blocks        Replacement block(s).
- * @param {number}            indexToSelect Index of replacement block to
- *                                          select.
+ * @param {number}            indexToSelect Index of replacement block to select.
+ * @param {number}            initialPosition Index of caret after in the selected block after the operation.
  *
  * @yield {Object} Action object.
  */
-export function* replaceBlocks( clientIds, blocks, indexToSelect ) {
+export function* replaceBlocks(
+	clientIds,
+	blocks,
+	indexToSelect,
+	initialPosition
+) {
 	clientIds = castArray( clientIds );
 	blocks = getBlocksWithDefaultStylesApplied(
 		castArray( blocks ),
@@ -319,6 +328,7 @@ export function* replaceBlocks( clientIds, blocks, indexToSelect ) {
 		blocks,
 		time: Date.now(),
 		indexToSelect,
+		initialPosition,
 	};
 	yield* ensureDefaultBlock();
 }
@@ -358,18 +368,18 @@ export const moveBlocksDown = createOnMove( 'MOVE_BLOCKS_DOWN' );
 export const moveBlocksUp = createOnMove( 'MOVE_BLOCKS_UP' );
 
 /**
- * Returns an action object signalling that an indexed block should be moved
- * to a new index.
+ * Returns an action object signalling that the given blocks should be moved to
+ * a new position.
  *
- * @param  {?string} clientId         The client ID of the block.
+ * @param  {?string} clientIds        The client IDs of the blocks.
  * @param  {?string} fromRootClientId Root client ID source.
  * @param  {?string} toRootClientId   Root client ID destination.
- * @param  {number}  index            The index to move the block into.
+ * @param  {number}  index            The index to move the blocks to.
  *
  * @yield {Object} Action object.
  */
-export function* moveBlockToPosition(
-	clientId,
+export function* moveBlocksToPosition(
+	clientIds,
 	fromRootClientId = '',
 	toRootClientId = '',
 	index
@@ -387,12 +397,13 @@ export function* moveBlockToPosition(
 	}
 
 	const action = {
-		type: 'MOVE_BLOCK_TO_POSITION',
+		type: 'MOVE_BLOCKS_TO_POSITION',
 		fromRootClientId,
 		toRootClientId,
-		clientId,
+		clientIds,
 		index,
 	};
+
 	// If moving inside the same root block the move is always possible.
 	if ( fromRootClientId === toRootClientId ) {
 		yield action;
@@ -400,28 +411,48 @@ export function* moveBlockToPosition(
 	}
 
 	// If templateLock is insert we can not remove the block from the parent.
-	// Given that here we know that we are moving the block to a different parent, the move should not be possible if the condition is true.
+	// Given that here we know that we are moving the block to a different
+	// parent, the move should not be possible if the condition is true.
 	if ( templateLock === 'insert' ) {
 		return;
 	}
 
-	const blockName = yield select(
+	const canInsertBlocks = yield select(
 		'core/block-editor',
-		'getBlockName',
-		clientId
-	);
-
-	const canInsertBlock = yield select(
-		'core/block-editor',
-		'canInsertBlockType',
-		blockName,
+		'canInsertBlocks',
+		clientIds,
 		toRootClientId
 	);
 
 	// If moving to other parent block, the move is possible if we can insert a block of the same type inside the new parent block.
-	if ( canInsertBlock ) {
+	if ( canInsertBlocks ) {
 		yield action;
 	}
+}
+
+/**
+ * Returns an action object signalling that the given block should be moved to a
+ * new position.
+ *
+ * @param  {?string} clientId         The client ID of the block.
+ * @param  {?string} fromRootClientId Root client ID source.
+ * @param  {?string} toRootClientId   Root client ID destination.
+ * @param  {number}  index            The index to move the block to.
+ *
+ * @yield {Object} Action object.
+ */
+export function* moveBlockToPosition(
+	clientId,
+	fromRootClientId = '',
+	toRootClientId = '',
+	index
+) {
+	yield moveBlocksToPosition(
+		[ clientId ],
+		fromRootClientId,
+		toRootClientId,
+		index
+	);
 }
 
 /**
@@ -586,8 +617,15 @@ export function* removeBlocks( clientIds, selectPrevious = true ) {
 		return;
 	}
 
+	let previousBlockId;
 	if ( selectPrevious ) {
-		yield selectPreviousBlock( clientIds[ 0 ] );
+		previousBlockId = yield selectPreviousBlock( clientIds[ 0 ] );
+	} else {
+		previousBlockId = yield select(
+			'core/block-editor',
+			'getPreviousBlockClientId',
+			clientIds[ 0 ]
+		);
 	}
 
 	yield {
@@ -597,7 +635,8 @@ export function* removeBlocks( clientIds, selectPrevious = true ) {
 
 	// To avoid a focus loss when removing the last block, assure there is
 	// always a default block if the last of the blocks have been removed.
-	yield* ensureDefaultBlock();
+	const defaultBlockId = yield* ensureDefaultBlock();
+	return [ previousBlockId || defaultBlockId ];
 }
 
 /**
@@ -785,7 +824,7 @@ export function updateBlockListSettings( clientId, settings ) {
 	};
 }
 
-/*
+/**
  * Returns an action object used in signalling that the block editor settings have been updated.
  *
  * @param {Object} settings Updated settings
@@ -796,20 +835,6 @@ export function updateSettings( settings ) {
 	return {
 		type: 'UPDATE_SETTINGS',
 		settings,
-	};
-}
-
-/**
- * Returns an action object used to toggle the width of the editing canvas
- *
- * @param {string} deviceType
- *
- * @return {Object} Action object.
- */
-export function setPreviewDeviceType( deviceType ) {
-	return {
-		type: 'SET_PREVIEW_DEVICE_TYPE',
-		deviceType,
 	};
 }
 
@@ -876,7 +901,7 @@ export function* setNavigationMode( isNavigationMode = true ) {
 	if ( isNavigationMode ) {
 		speak(
 			__(
-				'You are currently in navigation mode. Navigate blocks using the Tab key. To exit navigation mode and edit the selected block, press Enter.'
+				'You are currently in navigation mode. Navigate blocks using the Tab key and Arrow keys. Use Left and Right Arrow keys to move between nesting levels. To exit navigation mode and edit the selected block, press Enter.'
 			)
 		);
 	} else {
@@ -889,11 +914,32 @@ export function* setNavigationMode( isNavigationMode = true ) {
 }
 
 /**
+ * Generator that triggers an action used to enable or disable the block moving mode.
+ *
+ * @param {string|null} hasBlockMovingClientId Enable/Disable block moving mode.
+ */
+export function* setBlockMovingClientId( hasBlockMovingClientId = null ) {
+	yield {
+		type: 'SET_BLOCK_MOVING_MODE',
+		hasBlockMovingClientId,
+	};
+
+	if ( hasBlockMovingClientId ) {
+		speak(
+			__(
+				'Use the Tab key and Arrow keys to choose new block location. Use Left and Right Arrow keys to move between nesting levels. Once location is selected press Enter or Space to move the block.'
+			)
+		);
+	}
+}
+
+/**
  * Generator that triggers an action used to duplicate a list of blocks.
  *
  * @param {string[]} clientIds
+ * @param {boolean} updateSelection
  */
-export function* duplicateBlocks( clientIds ) {
+export function* duplicateBlocks( clientIds, updateSelection = true ) {
 	if ( ! clientIds && ! clientIds.length ) {
 		return;
 	}
@@ -912,7 +958,7 @@ export function* duplicateBlocks( clientIds ) {
 		return;
 	}
 	const blockNames = blocks.map( ( block ) => block.name );
-	// Return early if blocks don't support multipe  usage.
+	// Return early if blocks don't support multiple usage.
 	if (
 		some(
 			blockNames,
@@ -929,13 +975,19 @@ export function* duplicateBlocks( clientIds ) {
 		rootClientId
 	);
 	const clonedBlocks = blocks.map( ( block ) => cloneBlock( block ) );
-	yield insertBlocks( clonedBlocks, lastSelectedIndex + 1, rootClientId );
-	if ( clonedBlocks.length > 1 ) {
+	yield insertBlocks(
+		clonedBlocks,
+		lastSelectedIndex + 1,
+		rootClientId,
+		updateSelection
+	);
+	if ( clonedBlocks.length > 1 && updateSelection ) {
 		yield multiSelect(
 			first( clonedBlocks ).clientId,
 			last( clonedBlocks ).clientId
 		);
 	}
+	return clonedBlocks.map( ( block ) => block.clientId );
 }
 
 /**
@@ -967,7 +1019,7 @@ export function* insertBeforeBlock( clientId ) {
 		clientId,
 		rootClientId
 	);
-	yield insertDefaultBlock( {}, rootClientId, firstSelectedIndex );
+	return yield insertDefaultBlock( {}, rootClientId, firstSelectedIndex );
 }
 
 /**
@@ -999,5 +1051,51 @@ export function* insertAfterBlock( clientId ) {
 		clientId,
 		rootClientId
 	);
-	yield insertDefaultBlock( {}, rootClientId, firstSelectedIndex + 1 );
+	return yield insertDefaultBlock( {}, rootClientId, firstSelectedIndex + 1 );
+}
+
+/**
+ * Returns an action object that toggles the highlighted block state.
+ *
+ * @param {string} clientId The block's clientId.
+ * @param {boolean} isHighlighted The highlight state.
+ */
+export function toggleBlockHighlight( clientId, isHighlighted ) {
+	return {
+		type: 'TOGGLE_BLOCK_HIGHLIGHT',
+		clientId,
+		isHighlighted,
+	};
+}
+
+/**
+ * Yields action objects used in signalling that the block corresponding to the
+ * given clientId should appear to "flash" by rhythmically highlighting it.
+ *
+ * @param {string} clientId Target block client ID.
+ */
+export function* flashBlock( clientId ) {
+	yield toggleBlockHighlight( clientId, true );
+	yield {
+		type: 'SLEEP',
+		duration: 150,
+	};
+	yield toggleBlockHighlight( clientId, false );
+}
+
+/**
+ * Returns an action object that sets whether the block has controlled innerblocks.
+ *
+ * @param {string} clientId The block's clientId.
+ * @param {boolean} hasControlledInnerBlocks True if the block's inner blocks are controlled.
+ */
+export function setHasControlledInnerBlocks(
+	clientId,
+	hasControlledInnerBlocks
+) {
+	return {
+		type: 'SET_HAS_CONTROLLED_INNER_BLOCKS',
+		hasControlledInnerBlocks,
+		clientId,
+	};
 }

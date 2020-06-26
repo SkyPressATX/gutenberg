@@ -2,17 +2,17 @@
  * External dependencies
  */
 import React from 'react';
-import {
-	requestMediaEditor,
-	mediaSources,
-} from 'react-native-gutenberg-bridge';
 
 /**
  * WordPress dependencies
  */
 import { __ } from '@wordpress/i18n';
 import { Picker } from '@wordpress/components';
-import { update } from '@wordpress/icons';
+import { update, brush } from '@wordpress/icons';
+import {
+	requestMediaEditor,
+	mediaSources,
+} from '@wordpress/react-native-bridge';
 
 export const MEDIA_TYPE_IMAGE = 'image';
 
@@ -23,7 +23,7 @@ const editOption = {
 	value: MEDIA_EDITOR,
 	label: __( 'Edit' ),
 	types: [ MEDIA_TYPE_IMAGE ],
-	icon: 'admin-appearance',
+	icon: brush,
 };
 
 const replaceOption = {

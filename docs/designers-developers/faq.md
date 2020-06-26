@@ -116,7 +116,7 @@ This is the canonical list of keyboard shortcuts:
 			<td><kbd>⌥</kbd><kbd>F10</kbd></td>
 		</tr>
 		<tr>
-			<td>Switch between Visual editor and Code editor.</td>
+			<td>Switch between visual editor and code editor.</td>
 			<td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>M</kbd></td>
 			<td><kbd>⇧</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>M</kbd></td>
 		</tr>
@@ -177,6 +177,16 @@ This is the canonical list of keyboard shortcuts:
 			<td>Insert a new block after the selected block(s).</td>
 			<td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Y</kbd></td>
 			<td><kbd>⌥</kbd><kbd>⌘</kbd><kbd>Y</kbd></td>
+		</tr>
+		<tr>
+			<td>Move the selected block(s) up.</td>
+			<td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd></td>
+			<td><kbd>⌥</kbd><kbd>⌘</kbd><kbd>⇧</kbd><kbd>T</kbd></td>
+		</tr>
+		<tr>
+			<td>Move the selected block(s) down.</td>
+			<td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd></td>
+			<td><kbd>⌥</kbd><kbd>⌘</kbd><kbd>⇧</kbd><kbd>Y</kbd></td>
 		</tr>
 		<tr>
 			<td>Change the block type after adding a new paragraph.</td>

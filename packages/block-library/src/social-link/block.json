@@ -1,7 +1,9 @@
 {
 	"name": "core/social-link",
 	"category": "widgets",
-	"icon": "share",
+	"parent": [
+		"core/social-links"
+	],
 	"attributes": {
 		"url": {
 			"type": "string"
@@ -10,7 +12,12 @@
 			"type": "string"
 		},
 		"label": {
-			"type": "number"
+			"type": "string"
 		}
+	},
+	"supports": {
+		"reusable": false,
+		"html": false,
+		"lightBlockWrapper": true
 	}
 }

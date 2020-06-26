@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { find, get, has, map, pick, mapValues, includes } from 'lodash';
+import { find, get, has, map, pick, mapValues, includes, some } from 'lodash';
 import createSelector from 'rememo';
 
 /**
@@ -30,6 +30,7 @@ import {
 } from './constants';
 import { getPostRawValue } from './reducer';
 import serializeBlocks from './utils/serialize-blocks';
+import { cleanForSlug } from '../utils/url';
 
 /**
  * Shared reference to an empty object for cases where it is important to avoid
@@ -149,51 +150,17 @@ export const hasNonPostEntityChanges = createRegistrySelector(
 			return false;
 		}
 
-		const entityRecordChangesByRecord = select(
+		const dirtyEntityRecords = select(
 			'core'
-		).getEntityRecordChangesByRecord();
-		const changedKinds = Object.keys( entityRecordChangesByRecord );
-		if (
-			changedKinds.length > 1 ||
-			( changedKinds.length === 1 &&
-				! entityRecordChangesByRecord.postType )
-		) {
-			// Return true if there is more than one edited entity kind
-			// or the edited entity kind is not the editor's post's kind.
-			return true;
-		} else if ( ! entityRecordChangesByRecord.postType ) {
-			// Don't continue if there are no edited entity kinds.
-			return false;
-		}
-
+		).__experimentalGetDirtyEntityRecords();
 		const { type, id } = getCurrentPost( state );
-		const changedPostTypes = Object.keys(
-			entityRecordChangesByRecord.postType
+		return some(
+			dirtyEntityRecords,
+			( entityRecord ) =>
+				entityRecord.kind !== 'postType' ||
+				entityRecord.name !== type ||
+				entityRecord.key !== id
 		);
-		if (
-			changedPostTypes.length > 1 ||
-			( changedPostTypes.length === 1 &&
-				! entityRecordChangesByRecord.postType[ type ] )
-		) {
-			// Return true if there is more than one edited post type
-			// or the edited entity's post type is not the editor's post's post type.
-			return true;
-		}
-
-		const changedPosts = Object.keys(
-			entityRecordChangesByRecord.postType[ type ]
-		);
-		if (
-			changedPosts.length > 1 ||
-			( changedPosts.length === 1 &&
-				! entityRecordChangesByRecord.postType[ type ][ id ] )
-		) {
-			// Return true if there is more than one edited post
-			// or the edited post is not the editor's post.
-			return true;
-		}
-
-		return false;
 	}
 );
 
@@ -640,64 +607,63 @@ export function isEditedPostEmpty( state ) {
  * @return {boolean} Whether the post can be autosaved.
  */
 export const isEditedPostAutosaveable = createRegistrySelector(
-	( select ) =>
-		function( state ) {
-			// A post must contain a title, an excerpt, or non-empty content to be valid for autosaving.
-			if ( ! isEditedPostSaveable( state ) ) {
-				return false;
-			}
-
-			// A post is not autosavable when there is a post autosave lock.
-			if ( isPostAutosavingLocked( state ) ) {
-				return false;
-			}
-
-			const postType = getCurrentPostType( state );
-			const postId = getCurrentPostId( state );
-			const hasFetchedAutosave = select( 'core' ).hasFetchedAutosaves(
-				postType,
-				postId
-			);
-			const currentUserId = get( select( 'core' ).getCurrentUser(), [
-				'id',
-			] );
-
-			// Disable reason - this line causes the side-effect of fetching the autosave
-			// via a resolver, moving below the return would result in the autosave never
-			// being fetched.
-			// eslint-disable-next-line @wordpress/no-unused-vars-before-return
-			const autosave = select( 'core' ).getAutosave(
-				postType,
-				postId,
-				currentUserId
-			);
-
-			// If any existing autosaves have not yet been fetched, this function is
-			// unable to determine if the post is autosaveable, so return false.
-			if ( ! hasFetchedAutosave ) {
-				return false;
-			}
-
-			// If we don't already have an autosave, the post is autosaveable.
-			if ( ! autosave ) {
-				return true;
-			}
-
-			// To avoid an expensive content serialization, use the content dirtiness
-			// flag in place of content field comparison against the known autosave.
-			// This is not strictly accurate, and relies on a tolerance toward autosave
-			// request failures for unnecessary saves.
-			if ( hasChangedContent( state ) ) {
-				return true;
-			}
-
-			// If the title or excerpt has changed, the post is autosaveable.
-			return [ 'title', 'excerpt' ].some(
-				( field ) =>
-					getPostRawValue( autosave[ field ] ) !==
-					getEditedPostAttribute( state, field )
-			);
+	( select ) => ( state ) => {
+		// A post must contain a title, an excerpt, or non-empty content to be valid for autosaving.
+		if ( ! isEditedPostSaveable( state ) ) {
+			return false;
 		}
+
+		// A post is not autosavable when there is a post autosave lock.
+		if ( isPostAutosavingLocked( state ) ) {
+			return false;
+		}
+
+		const postType = getCurrentPostType( state );
+		const postId = getCurrentPostId( state );
+		const hasFetchedAutosave = select( 'core' ).hasFetchedAutosaves(
+			postType,
+			postId
+		);
+		const currentUserId = get( select( 'core' ).getCurrentUser(), [
+			'id',
+		] );
+
+		// Disable reason - this line causes the side-effect of fetching the autosave
+		// via a resolver, moving below the return would result in the autosave never
+		// being fetched.
+		// eslint-disable-next-line @wordpress/no-unused-vars-before-return
+		const autosave = select( 'core' ).getAutosave(
+			postType,
+			postId,
+			currentUserId
+		);
+
+		// If any existing autosaves have not yet been fetched, this function is
+		// unable to determine if the post is autosaveable, so return false.
+		if ( ! hasFetchedAutosave ) {
+			return false;
+		}
+
+		// If we don't already have an autosave, the post is autosaveable.
+		if ( ! autosave ) {
+			return true;
+		}
+
+		// To avoid an expensive content serialization, use the content dirtiness
+		// flag in place of content field comparison against the known autosave.
+		// This is not strictly accurate, and relies on a tolerance toward autosave
+		// request failures for unnecessary saves.
+		if ( hasChangedContent( state ) ) {
+			return true;
+		}
+
+		// If the title or excerpt has changed, the post is autosaveable.
+		return [ 'title', 'excerpt' ].some(
+			( field ) =>
+				getPostRawValue( autosave[ field ] ) !==
+				getEditedPostAttribute( state, field )
+		);
+	}
 );
 
 /**
@@ -793,7 +759,7 @@ export function isEditedPostDateFloating( state ) {
 		status === 'auto-draft' ||
 		status === 'pending'
 	) {
-		return date === modified;
+		return date === modified || date === null;
 	}
 	return false;
 }
@@ -1181,6 +1147,23 @@ export function getPermalink( state ) {
 	}
 
 	return prefix;
+}
+
+/**
+ * Returns the slug for the post being edited, preferring a manually edited
+ * value if one exists, then a sanitized version of the current post title, and
+ * finally the post ID.
+ *
+ * @param {Object} state Editor state.
+ *
+ * @return {string} The current slug to be displayed in the editor
+ */
+export function getEditedPostSlug( state ) {
+	return (
+		getEditedPostAttribute( state, 'slug' ) ||
+		cleanForSlug( getEditedPostAttribute( state, 'title' ) ) ||
+		getCurrentPostId( state )
+	);
 }
 
 /**

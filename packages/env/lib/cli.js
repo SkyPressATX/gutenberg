@@ -32,6 +32,7 @@ const withSpinner = ( command ) => ( ...args ) => {
 					time[ 1 ] / 1e6
 				).toFixed( 0 ) }ms)`
 			);
+			process.exit( 0 );
 		},
 		( error ) => {
 			if ( error instanceof env.ValidationError ) {
@@ -39,6 +40,8 @@ const withSpinner = ( command ) => ( ...args ) => {
 				spinner.fail( error.message );
 				process.exit( 1 );
 			} else if (
+				error &&
+				typeof error === 'object' &&
 				'exitCode' in error &&
 				'err' in error &&
 				'out' in error
@@ -53,12 +56,17 @@ const withSpinner = ( command ) => ( ...args ) => {
 					process.stderr.write( error.err );
 				}
 				process.exit( error.exitCode );
-			} else {
+			} else if ( error ) {
 				// Error is an unknown error. That means there was a bug in our code.
-				spinner.fail( error.message );
+				spinner.fail(
+					typeof error === 'string' ? error : error.message
+				);
 				// Disable reason: Using console.error() means we get a stack trace.
 				// eslint-disable-next-line no-console
 				console.error( error );
+				process.exit( 1 );
+			} else {
+				spinner.fail( 'An unknown error occured.' );
 				process.exit( 1 );
 			}
 		}
@@ -67,6 +75,11 @@ const withSpinner = ( command ) => ( ...args ) => {
 
 module.exports = function cli() {
 	yargs.usage( wpPrimary( '$0 <command>' ) );
+	yargs.option( 'debug', {
+		type: 'boolean',
+		describe: 'Enable debug output.',
+		default: false,
+	} );
 
 	yargs.command(
 		'start',
@@ -104,8 +117,30 @@ module.exports = function cli() {
 		withSpinner( env.clean )
 	);
 	yargs.command(
+		'logs',
+		'displays PHP and Docker logs for given WordPress environment.',
+		( args ) => {
+			args.positional( 'environment', {
+				type: 'string',
+				describe: 'Which environment to display the logs from.',
+				choices: [ 'development', 'tests', 'all' ],
+				default: 'development',
+			} );
+			args.option( 'watch', {
+				type: 'boolean',
+				default: true,
+				describe: 'Watch for logs as they happen.',
+			} );
+		},
+		withSpinner( env.logs )
+	);
+	yargs.example(
+		'$0 logs --no-watch --environment=tests',
+		'Displays the latest logs for the e2e test environment without watching.'
+	);
+	yargs.command(
 		'run <container> [command..]',
-		'Runs an arbitrary command in one of the underlying Docker containers.',
+		'Runs an arbitrary command in one of the underlying Docker containers. For example, it can be useful for running wp cli commands. You can also use it to open shell sessions like bash and the WordPress shell in the WordPress instance. For example, `wp-env run cli bash` will open bash in the development WordPress instance.',
 		( args ) => {
 			args.positional( 'container', {
 				type: 'string',
@@ -117,6 +152,26 @@ module.exports = function cli() {
 			} );
 		},
 		withSpinner( env.run )
+	);
+	yargs.example(
+		'$0 run cli wp user list',
+		'Runs `wp user list` wp-cli command which lists WordPress users.'
+	);
+	yargs.example(
+		'$0 run cli wp shell',
+		'Open the interactive WordPress shell for the development instance.'
+	);
+	yargs.example(
+		'$0 run tests-cli bash',
+		'Open a bash session in the WordPress tests instance.'
+	);
+	yargs.command(
+		'destroy',
+		wpRed(
+			'Destroy the WordPress environment. Deletes docker containers, volumes, and networks associated with the WordPress environment and removes local files.'
+		),
+		() => {},
+		withSpinner( env.destroy )
 	);
 
 	return yargs;

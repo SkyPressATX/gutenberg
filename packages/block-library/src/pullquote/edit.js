@@ -8,7 +8,7 @@ import { includes } from 'lodash';
  * WordPress dependencies
  */
 import { __ } from '@wordpress/i18n';
-import { Component } from '@wordpress/element';
+import { Component, Platform } from '@wordpress/element';
 import {
 	RichText,
 	ContrastChecker,
@@ -16,6 +16,13 @@ import {
 	withColors,
 	PanelColorSettings,
 } from '@wordpress/block-editor';
+import { createBlock } from '@wordpress/blocks';
+
+/**
+ * Internal dependencies
+ */
+import { Figure } from './figure';
+import { BlockQuote } from './blockquote';
 
 /**
  * Internal dependencies
@@ -98,6 +105,7 @@ class PullQuoteEdit extends Component {
 			setAttributes,
 			isSelected,
 			className,
+			insertBlocksAfter,
 		} = this.props;
 
 		const { value, citation } = attributes;
@@ -124,12 +132,13 @@ class PullQuoteEdit extends Component {
 
 		return (
 			<>
-				<figure style={ figureStyles } className={ figureClasses }>
-					<blockquote
+				<Figure style={ figureStyles } className={ figureClasses }>
+					<BlockQuote
 						style={ blockquoteStyles }
 						className={ blockquoteClasses }
 					>
 						<RichText
+							identifier="value"
 							multiline
 							value={ value }
 							onChange={ ( nextValue ) =>
@@ -141,9 +150,11 @@ class PullQuoteEdit extends Component {
 								// translators: placeholder text used for the quote
 								__( 'Write quote…' )
 							}
+							textAlign="center"
 						/>
 						{ ( ! RichText.isEmpty( citation ) || isSelected ) && (
 							<RichText
+								identifier="citation"
 								value={ citation }
 								placeholder={
 									// translators: placeholder text used for the citation
@@ -155,37 +166,46 @@ class PullQuoteEdit extends Component {
 									} )
 								}
 								className="wp-block-pullquote__citation"
+								__unstableMobileNoFocusOnMount
+								textAlign="center"
+								__unstableOnSplitAtEnd={ () =>
+									insertBlocksAfter(
+										createBlock( 'core/paragraph' )
+									)
+								}
 							/>
 						) }
-					</blockquote>
-				</figure>
-				<InspectorControls>
-					<PanelColorSettings
-						title={ __( 'Color settings' ) }
-						colorSettings={ [
-							{
-								value: mainColor.color,
-								onChange: this.pullQuoteMainColorSetter,
-								label: __( 'Main Color' ),
-							},
-							{
-								value: textColor.color,
-								onChange: this.pullQuoteTextColorSetter,
-								label: __( 'Text Color' ),
-							},
-						] }
-					>
-						{ isSolidColorStyle && (
-							<ContrastChecker
-								{ ...{
-									textColor: textColor.color,
-									backgroundColor: mainColor.color,
-								} }
-								isLargeText={ false }
-							/>
-						) }
-					</PanelColorSettings>
-				</InspectorControls>
+					</BlockQuote>
+				</Figure>
+				{ Platform.OS === 'web' && (
+					<InspectorControls>
+						<PanelColorSettings
+							title={ __( 'Color settings' ) }
+							colorSettings={ [
+								{
+									value: mainColor.color,
+									onChange: this.pullQuoteMainColorSetter,
+									label: __( 'Main color' ),
+								},
+								{
+									value: textColor.color,
+									onChange: this.pullQuoteTextColorSetter,
+									label: __( 'Text color' ),
+								},
+							] }
+						>
+							{ isSolidColorStyle && (
+								<ContrastChecker
+									{ ...{
+										textColor: textColor.color,
+										backgroundColor: mainColor.color,
+									} }
+									isLargeText={ false }
+								/>
+							) }
+						</PanelColorSettings>
+					</InspectorControls>
+				) }
 			</>
 		);
 	}

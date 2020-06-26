@@ -1,16 +1,24 @@
 /**
- * External dependencies
- */
-import { castArray } from 'lodash';
-
-/**
  * WordPress dependencies
  */
 import { Draggable } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
-import { useEffect, useRef } from '@wordpress/element';
+import { useContext, useEffect, useRef } from '@wordpress/element';
 
-const BlockDraggable = ( { children, clientIds } ) => {
+/**
+ * Internal dependencies
+ */
+import BlockDraggableChip from './draggable-chip';
+import useScrollWhenDragging from './use-scroll-when-dragging';
+import { BlockNodes } from '../block-list/root-container';
+
+const BlockDraggable = ( {
+	children,
+	clientIds,
+	cloneClassname,
+	onDragStart,
+	onDragEnd,
+} ) => {
 	const { srcRootClientId, index, isDraggable } = useSelect(
 		( select ) => {
 			const {
@@ -18,25 +26,29 @@ const BlockDraggable = ( { children, clientIds } ) => {
 				getBlockRootClientId,
 				getTemplateLock,
 			} = select( 'core/block-editor' );
-			const normalizedClientIds = castArray( clientIds );
-			const rootClientId =
-				normalizedClientIds.length === 1
-					? getBlockRootClientId( normalizedClientIds[ 0 ] )
-					: null;
+			const rootClientId = getBlockRootClientId( clientIds[ 0 ] );
 			const templateLock = rootClientId
 				? getTemplateLock( rootClientId )
 				: null;
 
 			return {
-				index: getBlockIndex( normalizedClientIds[ 0 ], rootClientId ),
+				index: getBlockIndex( clientIds[ 0 ], rootClientId ),
 				srcRootClientId: rootClientId,
-				isDraggable:
-					normalizedClientIds.length === 1 && 'all' !== templateLock,
+				isDraggable: 'all' !== templateLock,
 			};
 		},
 		[ clientIds ]
 	);
 	const isDragging = useRef( false );
+	const [ firstClientId ] = clientIds;
+	const blockNodes = useContext( BlockNodes );
+	const blockElement = blockNodes ? blockNodes[ firstClientId ] : undefined;
+	const [
+		startScrolling,
+		scrollOnDragOver,
+		stopScrolling,
+	] = useScrollWhenDragging( blockElement );
+
 	const { startDraggingBlocks, stopDraggingBlocks } = useDispatch(
 		'core/block-editor'
 	);
@@ -51,33 +63,49 @@ const BlockDraggable = ( { children, clientIds } ) => {
 	}, [] );
 
 	if ( ! isDraggable ) {
-		return null;
+		return children( { isDraggable: false } );
 	}
 
-	const normalizedClientIds = castArray( clientIds );
-	const blockElementId = `block-${ normalizedClientIds[ 0 ] }`;
 	const transferData = {
 		type: 'block',
 		srcIndex: index,
-		srcClientId: normalizedClientIds[ 0 ],
+		srcClientIds: clientIds,
 		srcRootClientId,
 	};
 
 	return (
 		<Draggable
-			elementId={ blockElementId }
+			cloneClassname={ cloneClassname }
+			elementId={ `block-${ clientIds[ 0 ] }` }
 			transferData={ transferData }
-			onDragStart={ () => {
+			onDragStart={ ( event ) => {
 				startDraggingBlocks();
 				isDragging.current = true;
+
+				startScrolling( event );
+
+				if ( onDragStart ) {
+					onDragStart();
+				}
 			} }
+			onDragOver={ scrollOnDragOver }
 			onDragEnd={ () => {
 				stopDraggingBlocks();
 				isDragging.current = false;
+
+				stopScrolling();
+
+				if ( onDragEnd ) {
+					onDragEnd();
+				}
 			} }
+			__experimentalDragComponent={
+				<BlockDraggableChip clientIds={ clientIds } />
+			}
 		>
 			{ ( { onDraggableStart, onDraggableEnd } ) => {
 				return children( {
+					isDraggable: true,
 					onDraggableStart,
 					onDraggableEnd,
 				} );

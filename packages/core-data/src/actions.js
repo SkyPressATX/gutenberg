@@ -95,6 +95,20 @@ export function receiveEntityRecords(
 }
 
 /**
+ * Returns an action object used in signalling that the current theme has been received.
+ *
+ * @param {Object} currentTheme The current theme.
+ *
+ * @return {Object} Action object.
+ */
+export function receiveCurrentTheme( currentTheme ) {
+	return {
+		type: 'RECEIVE_CURRENT_THEME',
+		currentTheme,
+	};
+}
+
+/**
  * Returns an action object used in signalling that the index has been received.
  *
  * @param {Object} themeSupports Theme support for the current theme.
@@ -235,10 +249,11 @@ export function __unstableCreateUndoLevel() {
 /**
  * Action triggered to save an entity record.
  *
- * @param {string} kind    Kind of the received entity.
- * @param {string} name    Name of the received entity.
- * @param {Object} record  Record to be saved.
- * @param {Object} options Saving options.
+ * @param {string}  kind                       Kind of the received entity.
+ * @param {string}  name                       Name of the received entity.
+ * @param {Object}  record                     Record to be saved.
+ * @param {Object}  options                    Saving options.
+ * @param {boolean} [options.isAutosave=false] Whether this is an autosave.
  */
 export function* saveEntityRecord(
 	kind,

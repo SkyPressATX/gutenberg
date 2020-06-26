@@ -12,7 +12,7 @@ The Gutenberg project uses GitHub for managing code and tracking issues. The mai
 
 ## Documentation Types
 
-There are two major sets of documentation for Gutenberg project:
+There are two major sets of documentation for the Gutenberg project:
 
 1. [User documentation](https://wordpress.org/support/article/wordpress-editor/) is information on how to use the Editor as an author publishing posts. For contributing to user docs, follow the docs blog, or ask in the #docs Slack channel, to understand the current priorities.
 2. [Block Editor Handbook](https://developer.wordpress.org/block-editor/) is everything related to the Gutenberg project including: developing, extending, and—what you are reading right now—contributing specific to Gutenberg.
@@ -62,6 +62,29 @@ To create links that work in all contexts, you should use absolute path links wi
 - `/packages/components/src/**/README.md`
 
 This way they will be properly handled in all three aforementioned contexts.
+
+### Code Examples
+
+The code example in markdown should be wrapped in three tick marks <code>```</code> and can additionally include a language specifier. See this [GitHub documentation around fenced code blocks](https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks).
+
+A unique feature to the Gutenberg documentation is the `codetabs` toggle, this allows two versions of code to be shown at once. This is used for showing both `ESNext` and `ES5` code samples. For example, [on this block tutorial page](/docs/designers-developers/developers/tutorials/block-tutorial/block-controls-toolbar-and-sidebar.md).
+
+Here is an example `codetabs` section:
+
+	{% codetabs %}
+	{% ESNext %}
+	```js
+		// ESNext code here
+	```
+	{% ES5 %}
+	```js
+		// ES5 code here
+	```
+	{% end %}
+
+The preferred format for code examples is ESNext, which should also be the default viewed. The example placed first in source will be shown as the default.
+
+Note: not all code examples are required to include ES5 code. The guidance is to include `ES5` code for beginner tutorials, but the majority of code in Gutenberg packages and across the larger React and JavaScript ecosystem is in ESNext.
 
 ## Resources
 

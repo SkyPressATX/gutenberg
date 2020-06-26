@@ -3,7 +3,7 @@
  */
 import { render, unmountComponentAtNode } from 'react-dom';
 import { act, Simulate } from 'react-dom/test-utils';
-import { first, last, nth } from 'lodash';
+import { first, last, nth, uniqueId } from 'lodash';
 /**
  * WordPress dependencies
  */
@@ -83,6 +83,56 @@ describe( 'Basic rendering', () => {
 
 		expect( searchInput ).not.toBeNull();
 		expect( container.innerHTML ).toMatchSnapshot();
+	} );
+
+	it( 'should not render protocol in links', async () => {
+		mockFetchSearchSuggestions.mockImplementation( () =>
+			Promise.resolve( [
+				{
+					id: uniqueId(),
+					title: 'Hello Page',
+					type: 'Page',
+					info: '2 days ago',
+					url: `http://example.com/?p=${ uniqueId() }`,
+				},
+				{
+					id: uniqueId(),
+					title: 'Hello Post',
+					type: 'Post',
+					info: '19 days ago',
+					url: `https://example.com/${ uniqueId() }`,
+				},
+			] )
+		);
+
+		const searchTerm = 'Hello';
+
+		act( () => {
+			render( <LinkControl />, container );
+		} );
+
+		// Search Input UI
+		const searchInput = getURLInput();
+
+		// Simulate searching for a term
+		act( () => {
+			Simulate.change( searchInput, { target: { value: searchTerm } } );
+		} );
+
+		// fetchFauxEntitySuggestions resolves on next "tick" of event loop
+		await eventLoopTick();
+
+		// Find all elements with link
+		// Filter out the element with the text 'ENTER' because it doesn't contain link
+		const linkElements = Array.from(
+			container.querySelectorAll(
+				'.block-editor-link-control__search-item-info'
+			)
+		).filter( ( elem ) => ! elem.innerHTML.includes( 'ENTER' ) );
+
+		linkElements.forEach( ( elem ) => {
+			expect( elem.innerHTML ).not.toContain( '://' );
+		} );
 	} );
 
 	describe( 'forceIsEditingLink', () => {
@@ -226,6 +276,8 @@ describe( 'Searching for a link', () => {
 			fauxEntitySuggestions.length
 		);
 
+		expect( searchInput.getAttribute( 'aria-expanded' ) ).toBe( 'true' );
+
 		// Sanity check that a search suggestion shows up corresponding to the data
 		expect( firstSearchResultItemHTML ).toEqual(
 			expect.stringContaining( firstFauxSuggestion.title )
@@ -238,6 +290,55 @@ describe( 'Searching for a link', () => {
 		expect( lastSearchResultItemHTML ).not.toEqual(
 			expect.stringContaining( 'URL' )
 		);
+	} );
+
+	it( 'should trim search term', async () => {
+		const searchTerm = '   Hello    ';
+
+		act( () => {
+			render( <LinkControl />, container );
+		} );
+
+		// Search Input UI
+		const searchInput = container.querySelector(
+			'input[aria-label="URL"]'
+		);
+
+		// Simulate searching for a term
+		act( () => {
+			Simulate.change( searchInput, { target: { value: searchTerm } } );
+		} );
+
+		// fetchFauxEntitySuggestions resolves on next "tick" of event loop
+		await eventLoopTick();
+
+		const searchResultTextHighlightElements = Array.from(
+			container.querySelectorAll(
+				'[role="listbox"] button[role="option"] mark'
+			)
+		);
+
+		const invalidResults = searchResultTextHighlightElements.find(
+			( mark ) => mark.innerHTML !== 'Hello'
+		);
+
+		// Grab the first argument that was passed to the fetchSuggestions
+		// handler (which is mocked out).
+		const mockFetchSuggestionsFirstArg =
+			mockFetchSearchSuggestions.mock.calls[ 0 ][ 0 ];
+
+		// Given we're mocking out the results we should always have 4 mark elements.
+		expect( searchResultTextHighlightElements ).toHaveLength( 4 );
+
+		// Make sure there are no `mark` elements which contain anything other
+		// than the trimmed search term (ie: no whitespace).
+		expect( invalidResults ).toBeFalsy();
+
+		// Implementation detail test to ensure that the fetch handler is called
+		// with the trimmed search value. We do this because we are mocking out
+		// the fetch handler in our test so we need to assert it would be called
+		// correctly in a real world scenario.
+		expect( mockFetchSuggestionsFirstArg ).toEqual( 'Hello' );
 	} );
 
 	it.each( [
@@ -467,6 +568,8 @@ describe( 'Default search suggestions', () => {
 		// it should match any url that's like ?p= and also include a URL option
 		expect( searchResultElements ).toHaveLength( 5 );
 
+		expect( searchInput.getAttribute( 'aria-expanded' ) ).toBe( 'true' );
+
 		expect( mockFetchSearchSuggestions ).toHaveBeenCalledTimes( 1 );
 	} );
 
@@ -516,6 +619,34 @@ describe( 'Default search suggestions', () => {
 		expect( searchResultLabel.innerHTML ).toBe( 'Recently updated' );
 
 		expect( searchResultElements ).toHaveLength( 3 );
+	} );
+
+	it( 'should not display initial suggestions when there are no recently updated pages/posts', async () => {
+		const noResults = [];
+		// Force API returning empty results for recently updated Pages.
+		mockFetchSearchSuggestions.mockImplementation( () =>
+			Promise.resolve( noResults )
+		);
+
+		act( () => {
+			render( <LinkControl showInitialSuggestions />, container );
+		} );
+
+		await eventLoopTick();
+
+		const searchInput = getURLInput();
+
+		const searchResultElements = getSearchResults();
+
+		const searchResultLabel = container.querySelector(
+			'.block-editor-link-control__search-results-label'
+		);
+
+		expect( searchResultLabel ).toBeFalsy();
+
+		expect( searchResultElements ).toHaveLength( 0 );
+
+		expect( searchInput.getAttribute( 'aria-expanded' ) ).toBe( 'false' );
 	} );
 } );
 

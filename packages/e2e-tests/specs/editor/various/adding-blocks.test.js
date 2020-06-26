@@ -6,8 +6,8 @@ import {
 	insertBlock,
 	getEditedPostContent,
 	pressKeyTimes,
-	switchEditorModeTo,
 	setBrowserViewport,
+	closeGlobalBlockInserter,
 } from '@wordpress/e2e-test-utils';
 
 /** @typedef {import('puppeteer').ElementHandle} ElementHandle */
@@ -42,7 +42,7 @@ describe( 'adding blocks', () => {
 
 		// Click below editor to focus last field (block appender)
 		await clickAtBottom(
-			await page.$( '.block-editor-editor-skeleton__content' )
+			await page.$( '.interface-interface-skeleton__content' )
 		);
 		expect( await page.$( '[data-type="core/paragraph"]' ) ).not.toBeNull();
 		await page.keyboard.type( 'Paragraph block' );
@@ -50,6 +50,9 @@ describe( 'adding blocks', () => {
 		// Using the slash command
 		await page.keyboard.press( 'Enter' );
 		await page.keyboard.type( '/quote' );
+		await page.waitForXPath(
+			`//*[contains(@class, "components-autocomplete__result") and contains(@class, "is-selected") and contains(text(), 'Quote')]`
+		);
 		await page.keyboard.press( 'Enter' );
 		await page.keyboard.type( 'Quote block' );
 
@@ -62,6 +65,9 @@ describe( 'adding blocks', () => {
 		// append the default block. Pressing backspace on the focused block
 		// will remove it.
 		await page.keyboard.type( '/image' );
+		await page.waitForXPath(
+			`//*[contains(@class, "components-autocomplete__result") and contains(@class, "is-selected") and contains(text(), 'Image')]`
+		);
 		await page.keyboard.press( 'Enter' );
 		await page.keyboard.press( 'Enter' );
 		expect( await getEditedPostContent() ).toMatchSnapshot();
@@ -92,6 +98,7 @@ describe( 'adding blocks', () => {
 
 		// Unselect blocks to avoid conflicts with the inbetween inserter
 		await page.click( '.editor-post-title__input' );
+		await closeGlobalBlockInserter();
 
 		// Using the between inserter
 		const insertionPoint = await page.$( '[data-type="core/quote"]' );
@@ -111,15 +118,13 @@ describe( 'adding blocks', () => {
 			() =>
 				document.activeElement &&
 				document.activeElement.classList.contains(
-					'block-editor-inserter__search'
+					'block-editor-inserter__search-input'
 				)
 		);
 		await page.keyboard.type( 'para' );
-		await pressKeyTimes( 'Tab', 3 );
+		await pressKeyTimes( 'Tab', 2 );
 		await page.keyboard.press( 'Enter' );
 		await page.keyboard.type( 'Second paragraph' );
-
-		await switchEditorModeTo( 'Code' );
 
 		expect( await getEditedPostContent() ).toMatchSnapshot();
 	} );
@@ -137,7 +142,7 @@ describe( 'adding blocks', () => {
 			() => document.activeElement.classList
 		);
 		expect( Object.values( activeElementClassList ) ).toContain(
-			'block-editor-inserter__search'
+			'block-editor-inserter__search-input'
 		);
 
 		// Try using the up arrow key (vertical navigation triggers the issue described in #9583).
@@ -148,29 +153,30 @@ describe( 'adding blocks', () => {
 			() => document.activeElement.classList
 		);
 		expect( Object.values( activeElementClassList ) ).toContain(
-			'block-editor-inserter__search'
+			'block-editor-inserter__search-input'
 		);
 
-		// Tab to the block search results
+		// Tab to the block list
+		await page.keyboard.press( 'Tab' );
 		await page.keyboard.press( 'Tab' );
 
-		// Expect the search results to be the active element.
+		// Expect the block list to be the active element.
 		activeElementClassList = await page.evaluate(
 			() => document.activeElement.classList
 		);
 		expect( Object.values( activeElementClassList ) ).toContain(
-			'block-editor-inserter__results'
+			'block-editor-block-types-list__item'
 		);
 
 		// Try using the up arrow key
 		await page.keyboard.press( 'ArrowUp' );
 
-		// Expect the search results to still be the active element.
+		// Expect the block list to still be the active element.
 		activeElementClassList = await page.evaluate(
 			() => document.activeElement.classList
 		);
 		expect( Object.values( activeElementClassList ) ).toContain(
-			'block-editor-inserter__results'
+			'block-editor-block-types-list__item'
 		);
 
 		// Press escape to close the block inserter.

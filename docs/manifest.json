@@ -12,6 +12,30 @@
 		"parent": null
 	},
 	{
+		"title": "Architecture",
+		"slug": "architecture",
+		"markdown_source": "../docs/architecture/readme.md",
+		"parent": "principles"
+	},
+	{
+		"title": "Modularity",
+		"slug": "modularity",
+		"markdown_source": "../docs/architecture/modularity.md",
+		"parent": "architecture"
+	},
+	{
+		"title": "Performance",
+		"slug": "performance",
+		"markdown_source": "../docs/architecture/performance.md",
+		"parent": "architecture"
+	},
+	{
+		"title": "Automated Testing",
+		"slug": "automated-testing",
+		"markdown_source": "../docs/architecture/automated-testing.md",
+		"parent": "architecture"
+	},
+	{
 		"title": "Key Concepts",
 		"slug": "key-concepts",
 		"markdown_source": "../docs/designers-developers/key-concepts.md",
@@ -72,15 +96,33 @@
 		"parent": "block-api"
 	},
 	{
+		"title": "Block Context",
+		"slug": "block-context",
+		"markdown_source": "../docs/designers-developers/developers/block-api/block-context.md",
+		"parent": "block-api"
+	},
+	{
 		"title": "Deprecated Blocks",
 		"slug": "block-deprecation",
 		"markdown_source": "../docs/designers-developers/developers/block-api/block-deprecation.md",
 		"parent": "block-api"
 	},
 	{
+		"title": "Block Transforms",
+		"slug": "block-transforms",
+		"markdown_source": "../docs/designers-developers/developers/block-api/block-transforms.md",
+		"parent": "block-api"
+	},
+	{
 		"title": "Templates",
 		"slug": "block-templates",
 		"markdown_source": "../docs/designers-developers/developers/block-api/block-templates.md",
+		"parent": "block-api"
+	},
+	{
+		"title": "Patterns (Experimental)",
+		"slug": "block-patterns",
+		"markdown_source": "../docs/designers-developers/developers/block-api/block-patterns.md",
 		"parent": "block-api"
 	},
 	{
@@ -216,6 +258,12 @@
 		"parent": "themes"
 	},
 	{
+		"title": "Themes & Block Editor: experimental theme.json",
+		"slug": "theme-json",
+		"markdown_source": "../docs/designers-developers/developers/themes/theme-json.md",
+		"parent": "themes"
+	},
+	{
 		"title": "Backward Compatibility",
 		"slug": "backward-compatibility",
 		"markdown_source": "../docs/designers-developers/developers/backward-compatibility/README.md",
@@ -234,6 +282,24 @@
 		"parent": "backward-compatibility"
 	},
 	{
+		"title": "Gutenberg as a Development Platform",
+		"slug": "platform",
+		"markdown_source": "../docs/designers-developers/developers/platform/README.md",
+		"parent": "developers"
+	},
+	{
+		"title": "Building a custom block editor",
+		"slug": "custom-block-editor",
+		"markdown_source": "../docs/designers-developers/developers/platform/custom-block-editor/README.md",
+		"parent": "platform"
+	},
+	{
+		"title": "Tutorial: building a custom block editor",
+		"slug": "tutorial",
+		"markdown_source": "../docs/designers-developers/developers/platform/custom-block-editor/tutorial.md",
+		"parent": "custom-block-editor"
+	},
+	{
 		"title": "Designer Documentation",
 		"slug": "designers",
 		"markdown_source": "../docs/designers-developers/designers/README.md",
@@ -246,9 +312,9 @@
 		"parent": "designers"
 	},
 	{
-		"title": "Patterns",
-		"slug": "design-patterns",
-		"markdown_source": "../docs/designers-developers/designers/design-patterns.md",
+		"title": "User Interface",
+		"slug": "user-interface",
+		"markdown_source": "../docs/designers-developers/designers/user-interface.md",
 		"parent": "designers"
 	},
 	{
@@ -358,6 +424,12 @@
 		"slug": "copy-guide",
 		"markdown_source": "../docs/contributors/copy-guide.md",
 		"parent": "document"
+	},
+	{
+		"title": "Triage",
+		"slug": "triage",
+		"markdown_source": "../docs/contributors/triage.md",
+		"parent": "contributors"
 	},
 	{
 		"title": "Localizing Gutenberg Plugin",
@@ -588,6 +660,12 @@
 		"parent": null
 	},
 	{
+		"title": "AlignmentMatrixControl",
+		"slug": "alignment-matrix-control",
+		"markdown_source": "../packages/components/src/alignment-matrix-control/README.md",
+		"parent": "components"
+	},
+	{
 		"title": "AnglePickerControl",
 		"slug": "angle-picker-control",
 		"markdown_source": "../packages/components/src/angle-picker-control/README.md",
@@ -609,6 +687,12 @@
 		"title": "BaseControl",
 		"slug": "base-control",
 		"markdown_source": "../packages/components/src/base-control/README.md",
+		"parent": "components"
+	},
+	{
+		"title": "BoxControl",
+		"slug": "box-control",
+		"markdown_source": "../packages/components/src/box-control/README.md",
 		"parent": "components"
 	},
 	{
@@ -657,6 +741,12 @@
 		"title": "ColorPicker",
 		"slug": "color-picker",
 		"markdown_source": "../packages/components/src/color-picker/README.md",
+		"parent": "components"
+	},
+	{
+		"title": "ComboboxControl",
+		"slug": "combobox-control",
+		"markdown_source": "../packages/components/src/combobox-control/README.md",
 		"parent": "components"
 	},
 	{
@@ -717,6 +807,12 @@
 		"title": "ExternalLink",
 		"slug": "external-link",
 		"markdown_source": "../packages/components/src/external-link/README.md",
+		"parent": "components"
+	},
+	{
+		"title": "Flex",
+		"slug": "flex",
+		"markdown_source": "../packages/components/src/flex/README.md",
 		"parent": "components"
 	},
 	{
@@ -822,6 +918,12 @@
 		"parent": "components"
 	},
 	{
+		"title": "InputControl",
+		"slug": "input-control",
+		"markdown_source": "../packages/components/src/input-control/README.md",
+		"parent": "components"
+	},
+	{
 		"title": "IsolatedEventContainer",
 		"slug": "isolated-event-container",
 		"markdown_source": "../packages/components/src/isolated-event-container/README.md",
@@ -870,6 +972,12 @@
 		"parent": "components"
 	},
 	{
+		"title": "NumberControl",
+		"slug": "number-control",
+		"markdown_source": "../packages/components/src/number-control/README.md",
+		"parent": "components"
+	},
+	{
 		"title": "Panel",
 		"slug": "panel",
 		"markdown_source": "../packages/components/src/panel/README.md",
@@ -900,6 +1008,12 @@
 		"parent": "components"
 	},
 	{
+		"title": "RadioGroup",
+		"slug": "radio-group",
+		"markdown_source": "../packages/components/src/radio-group/README.md",
+		"parent": "components"
+	},
+	{
 		"title": "RangeControl",
 		"slug": "range-control",
 		"markdown_source": "../packages/components/src/range-control/README.md",
@@ -909,6 +1023,12 @@
 		"title": "ResizableBox",
 		"slug": "resizable-box",
 		"markdown_source": "../packages/components/src/resizable-box/README.md",
+		"parent": "components"
+	},
+	{
+		"title": "ResizeTooltip",
+		"slug": "resize-tooltip",
+		"markdown_source": "../packages/components/src/resizable-box/resize-tooltip/README.md",
 		"parent": "components"
 	},
 	{
@@ -1002,9 +1122,21 @@
 		"parent": "components"
 	},
 	{
+		"title": "TreeGrid",
+		"slug": "tree-grid",
+		"markdown_source": "../packages/components/src/tree-grid/README.md",
+		"parent": "components"
+	},
+	{
 		"title": "TreeSelect",
 		"slug": "tree-select",
 		"markdown_source": "../packages/components/src/tree-select/README.md",
+		"parent": "components"
+	},
+	{
+		"title": "UnitControl",
+		"slug": "unit-control",
+		"markdown_source": "../packages/components/src/unit-control/README.md",
 		"parent": "components"
 	},
 	{
@@ -1266,6 +1398,12 @@
 		"parent": "packages"
 	},
 	{
+		"title": "@wordpress/edit-navigation",
+		"slug": "packages-edit-navigation",
+		"markdown_source": "../packages/edit-navigation/README.md",
+		"parent": "packages"
+	},
+	{
 		"title": "@wordpress/edit-post",
 		"slug": "packages-edit-post",
 		"markdown_source": "../packages/edit-post/README.md",
@@ -1344,6 +1482,12 @@
 		"parent": "packages"
 	},
 	{
+		"title": "@wordpress/interface",
+		"slug": "packages-interface",
+		"markdown_source": "../packages/interface/README.md",
+		"parent": "packages"
+	},
+	{
 		"title": "@wordpress/is-shallow-equal",
 		"slug": "packages-is-shallow-equal",
 		"markdown_source": "../packages/is-shallow-equal/README.md",
@@ -1377,6 +1521,12 @@
 		"title": "@wordpress/keycodes",
 		"slug": "packages-keycodes",
 		"markdown_source": "../packages/keycodes/README.md",
+		"parent": "packages"
+	},
+	{
+		"title": "@wordpress/lazy-import",
+		"slug": "packages-lazy-import",
+		"markdown_source": "../packages/lazy-import/README.md",
 		"parent": "packages"
 	},
 	{
@@ -1422,9 +1572,21 @@
 		"parent": "packages"
 	},
 	{
+		"title": "@wordpress/postcss-plugins-preset",
+		"slug": "packages-postcss-plugins-preset",
+		"markdown_source": "../packages/postcss-plugins-preset/README.md",
+		"parent": "packages"
+	},
+	{
 		"title": "@wordpress/postcss-themes",
 		"slug": "packages-postcss-themes",
 		"markdown_source": "../packages/postcss-themes/README.md",
+		"parent": "packages"
+	},
+	{
+		"title": "@wordpress/prettier-config",
+		"slug": "packages-prettier-config",
+		"markdown_source": "../packages/prettier-config/README.md",
 		"parent": "packages"
 	},
 	{
@@ -1443,6 +1605,24 @@
 		"title": "@wordpress/project-management-automation",
 		"slug": "packages-project-management-automation",
 		"markdown_source": "../packages/project-management-automation/README.md",
+		"parent": "packages"
+	},
+	{
+		"title": "@wordpress/react-native-aztec",
+		"slug": "packages-react-native-aztec",
+		"markdown_source": "../packages/react-native-aztec/README.md",
+		"parent": "packages"
+	},
+	{
+		"title": "@wordpress/react-native-bridge",
+		"slug": "packages-react-native-bridge",
+		"markdown_source": "../packages/react-native-bridge/README.md",
+		"parent": "packages"
+	},
+	{
+		"title": "@wordpress/react-native-editor",
+		"slug": "packages-react-native-editor",
+		"markdown_source": "../packages/react-native-editor/README.md",
 		"parent": "packages"
 	},
 	{

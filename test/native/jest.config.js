@@ -30,10 +30,13 @@ module.exports = {
 		'<rootDir>/' + configPath + '/enzyme.config.js',
 	],
 	testEnvironment: 'jsdom',
-	testMatch: [ '**/test/*.native.[jt]s?(x)' ],
+	testMatch: [
+		'**/test/*.native.[jt]s?(x)',
+		'<rootDir>/packages/react-native-*/**/?(*.)+(spec|test).[jt]s?(x)',
+	],
 	testPathIgnorePatterns: [
 		'/node_modules/',
-		'/wordpress/',
+		'<rootDir>/wordpress/',
 		'/__device-tests__/',
 	],
 	testURL: 'http://localhost/',
@@ -50,6 +53,9 @@ module.exports = {
 			'|'
 		) })$` ]: '<rootDir>/packages/$1/src',
 	},
+	modulePathIgnorePatterns: [
+		'<rootDir>/packages/react-native-editor/node_modules',
+	],
 	haste: {
 		defaultPlatform: rnPlatform,
 		platforms: [ 'android', 'ios', 'native' ],

@@ -6,11 +6,16 @@ import classnames from 'classnames';
 /**
  * WordPress dependencies
  */
-import { useRef, useState, useEffect } from '@wordpress/element';
+import {
+	useRef,
+	useState,
+	useEffect,
+	useLayoutEffect,
+} from '@wordpress/element';
 import { focus, getRectangleFromRange } from '@wordpress/dom';
 import { ESCAPE } from '@wordpress/keycodes';
 import deprecated from '@wordpress/deprecated';
-import { useViewportMatch } from '@wordpress/compose';
+import { useViewportMatch, useResizeObserver } from '@wordpress/compose';
 import { close } from '@wordpress/icons';
 
 /**
@@ -23,7 +28,7 @@ import PopoverDetectOutside from './detect-outside';
 import Button from '../button';
 import ScrollLock from '../scroll-lock';
 import IsolatedEventContainer from '../isolated-event-container';
-import { Slot, Fill, Consumer } from '../slot-fill';
+import { Slot, Fill, useSlot } from '../slot-fill';
 import Animate from '../animate';
 
 const FocusManaged = withConstrainedTabbing(
@@ -232,11 +237,12 @@ const Popover = ( {
 	onKeyDown,
 	children,
 	className,
-	noArrow = false,
+	noArrow = true,
+	isAlternate,
 	// Disable reason: We generate the `...contentProps` rest as remainder
 	// of props which aren't explicitly handled by this component.
 	/* eslint-disable no-unused-vars */
-	position = 'top',
+	position = 'bottom right',
 	range,
 	focusOnMount = 'firstElement',
 	anchorRef,
@@ -249,25 +255,26 @@ const Popover = ( {
 	onFocusOutside,
 	__unstableSticky,
 	__unstableSlotName = SLOT_NAME,
-	__unstableAllowVerticalSubpixelPosition,
-	__unstableAllowHorizontalSubpixelPosition,
+	__unstableObserveElement,
 	__unstableFixedPosition = true,
+	__unstableBoundaryParent,
 	/* eslint-enable no-unused-vars */
 	...contentProps
 } ) => {
 	const anchorRefFallback = useRef( null );
 	const contentRef = useRef( null );
 	const containerRef = useRef();
-	const contentRect = useRef();
 	const isMobileViewport = useViewportMatch( 'medium', '<' );
 	const [ animateOrigin, setAnimateOrigin ] = useState();
+	const slot = useSlot( __unstableSlotName );
 	const isExpanded = expandOnMobile && isMobileViewport;
-
+	const [ containerResizeListener, contentSize ] = useResizeObserver();
 	noArrow = isExpanded || noArrow;
 
-	useEffect( () => {
+	useLayoutEffect( () => {
 		if ( isExpanded ) {
 			setClass( containerRef.current, 'is-without-arrow', noArrow );
+			setClass( containerRef.current, 'is-alternate', isAlternate );
 			setAttribute( containerRef.current, 'data-x-axis' );
 			setAttribute( containerRef.current, 'data-y-axis' );
 			setStyle( containerRef.current, 'top' );
@@ -278,7 +285,7 @@ const Popover = ( {
 			return;
 		}
 
-		const refresh = ( { subpixels } = {} ) => {
+		const refresh = () => {
 			if ( ! containerRef.current || ! contentRef.current ) {
 				return;
 			}
@@ -293,10 +300,6 @@ const Popover = ( {
 
 			if ( ! anchor ) {
 				return;
-			}
-
-			if ( ! contentRect.current ) {
-				contentRect.current = contentRef.current.getBoundingClientRect();
 			}
 
 			let relativeOffsetTop = 0;
@@ -323,6 +326,17 @@ const Popover = ( {
 				setStyle( containerRef.current, 'position' );
 			}
 
+			let boundaryElement;
+			if ( __unstableBoundaryParent ) {
+				boundaryElement = containerRef.current.closest(
+					'.popover-slot'
+				)?.parentNode;
+			}
+
+			const usedContentSize = ! contentSize.height
+				? contentRef.current.getBoundingClientRect()
+				: contentSize;
+
 			const {
 				popoverTop,
 				popoverLeft,
@@ -332,49 +346,20 @@ const Popover = ( {
 				contentWidth,
 			} = computePopoverPosition(
 				anchor,
-				contentRect.current,
+				usedContentSize,
 				position,
 				__unstableSticky,
 				containerRef.current,
-				relativeOffsetTop
+				relativeOffsetTop,
+				boundaryElement
 			);
 
 			if (
 				typeof popoverTop === 'number' &&
 				typeof popoverLeft === 'number'
 			) {
-				if ( subpixels && __unstableAllowVerticalSubpixelPosition ) {
-					setStyle(
-						containerRef.current,
-						'left',
-						popoverLeft + 'px'
-					);
-					setStyle( containerRef.current, 'top' );
-					setStyle(
-						containerRef.current,
-						'transform',
-						`translateY(${ popoverTop }px)`
-					);
-				} else if (
-					subpixels &&
-					__unstableAllowHorizontalSubpixelPosition
-				) {
-					setStyle( containerRef.current, 'top', popoverTop + 'px' );
-					setStyle( containerRef.current, 'left' );
-					setStyle(
-						containerRef.current,
-						'transform',
-						`translate(${ popoverLeft }px)`
-					);
-				} else {
-					setStyle( containerRef.current, 'top', popoverTop + 'px' );
-					setStyle(
-						containerRef.current,
-						'left',
-						popoverLeft + 'px'
-					);
-					setStyle( containerRef.current, 'transform' );
-				}
+				setStyle( containerRef.current, 'top', popoverTop + 'px' );
+				setStyle( containerRef.current, 'left', popoverLeft + 'px' );
 			}
 
 			setClass(
@@ -382,6 +367,7 @@ const Popover = ( {
 				'is-without-arrow',
 				noArrow || ( xAxis === 'center' && yAxis === 'middle' )
 			);
+			setClass( containerRef.current, 'is-alternate', isAlternate );
 			setAttribute( containerRef.current, 'data-x-axis', xAxis );
 			setAttribute( containerRef.current, 'data-y-axis', yAxis );
 			setStyle(
@@ -438,15 +424,9 @@ const Popover = ( {
 
 		let observer;
 
-		const observeElement =
-			__unstableAllowVerticalSubpixelPosition ||
-			__unstableAllowHorizontalSubpixelPosition;
-
-		if ( observeElement ) {
-			observer = new window.MutationObserver( () =>
-				refresh( { subpixels: true } )
-			);
-			observer.observe( observeElement, { attributes: true } );
+		if ( __unstableObserveElement ) {
+			observer = new window.MutationObserver( refresh );
+			observer.observe( __unstableObserveElement, { attributes: true } );
 		}
 
 		return () => {
@@ -468,9 +448,10 @@ const Popover = ( {
 		anchorRef,
 		shouldAnchorIncludePadding,
 		position,
+		contentSize,
 		__unstableSticky,
-		__unstableAllowVerticalSubpixelPosition,
-		__unstableAllowHorizontalSubpixelPosition,
+		__unstableObserveElement,
+		__unstableBoundaryParent,
 	] );
 
 	useFocusContentOnMount( focusOnMount, contentRef );
@@ -564,6 +545,7 @@ const Popover = ( {
 							{
 								'is-expanded': isExpanded,
 								'is-without-arrow': noArrow,
+								'is-alternate': isAlternate,
 							}
 						) }
 						{ ...contentProps }
@@ -588,7 +570,10 @@ const Popover = ( {
 							className="components-popover__content"
 							tabIndex="-1"
 						>
-							{ children }
+							<div style={ { position: 'relative' } }>
+								{ containerResizeListener }
+								{ children }
+							</div>
 						</div>
 					</IsolatedEventContainer>
 				) }
@@ -602,31 +587,21 @@ const Popover = ( {
 		content = <FocusManaged>{ content }</FocusManaged>;
 	}
 
-	return (
-		<Consumer>
-			{ ( { getSlot } ) => {
-				// In case there is no slot context in which to render,
-				// default to an in-place rendering.
-				if ( getSlot && getSlot( __unstableSlotName ) ) {
-					content = (
-						<Fill name={ __unstableSlotName }>{ content }</Fill>
-					);
-				}
+	if ( slot.ref ) {
+		content = <Fill name={ __unstableSlotName }>{ content }</Fill>;
+	}
 
-				if ( anchorRef || anchorRect ) {
-					return content;
-				}
+	if ( anchorRef || anchorRect ) {
+		return content;
+	}
 
-				return <span ref={ anchorRefFallback }>{ content }</span>;
-			} }
-		</Consumer>
-	);
+	return <span ref={ anchorRefFallback }>{ content }</span>;
 };
 
 const PopoverContainer = Popover;
 
 PopoverContainer.Slot = ( { name = SLOT_NAME } ) => (
-	<Slot bubblesVirtually name={ name } />
+	<Slot bubblesVirtually name={ name } className="popover-slot" />
 );
 
 export default PopoverContainer;

@@ -49,8 +49,10 @@ export function OptionsModal( { isModalActive, isViewable, closeModal } ) {
 					label={ __( 'Pre-publish checks' ) }
 				/>
 				<EnableFeature
-					feature="showInserterHelpPanel"
-					label={ __( 'Inserter help panel' ) }
+					featureName="mostUsedBlocks"
+					label={ __(
+						'Enable the Most Used Blocks category in the block library'
+					) }
 				/>
 			</Section>
 			<Section title={ __( 'Document panels' ) }>

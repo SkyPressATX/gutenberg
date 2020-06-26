@@ -152,7 +152,6 @@ class URLInput extends Component {
 		this.isUpdatingSuggestions = true;
 
 		this.setState( {
-			showSuggestions: true,
 			selectedSuggestion: null,
 			loading: true,
 		} );
@@ -173,11 +172,13 @@ class URLInput extends Component {
 				this.setState( {
 					suggestions,
 					loading: false,
+					showSuggestions: !! suggestions.length,
 				} );
 
 				if ( !! suggestions.length ) {
 					this.props.debouncedSpeak(
 						sprintf(
+							/* translators: %s: number of results. */
 							_n(
 								'%d result found, use up and down arrow keys to navigate.',
 								'%d results found, use up and down arrow keys to navigate.',
@@ -214,7 +215,7 @@ class URLInput extends Component {
 
 		this.props.onChange( inputValue );
 		if ( ! this.props.disableSuggestions ) {
-			this.updateSuggestions( inputValue );
+			this.updateSuggestions( inputValue.trim() );
 		}
 	}
 
@@ -231,7 +232,7 @@ class URLInput extends Component {
 			! ( suggestions && suggestions.length )
 		) {
 			// Ensure the suggestions are updated with the current input value
-			this.updateSuggestions( value );
+			this.updateSuggestions( value.trim() );
 		}
 	}
 
@@ -378,7 +379,6 @@ class URLInput extends Component {
 			instanceId,
 			className,
 			isFullWidth,
-			hasBorder,
 			__experimentalRenderSuggestions: renderSuggestions,
 			placeholder = __( 'Paste URL or type to search' ),
 			value = '',
@@ -421,7 +421,6 @@ class URLInput extends Component {
 				id={ id }
 				className={ classnames( 'block-editor-url-input', className, {
 					'is-full-width': isFullWidth,
-					'has-border': hasBorder,
 				} ) }
 			>
 				<input

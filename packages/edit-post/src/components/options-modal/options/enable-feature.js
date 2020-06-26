@@ -10,15 +10,14 @@ import { withSelect, withDispatch } from '@wordpress/data';
 import BaseOption from './base';
 
 export default compose(
-	withSelect( ( select, { feature } ) => ( {
-		isChecked: select( 'core/edit-post' ).isFeatureActive( feature ),
-	} ) ),
-	withDispatch( ( dispatch, { feature } ) => {
-		const { toggleFeature } = dispatch( 'core/edit-post' );
+	withSelect( ( select, { featureName } ) => {
+		const { isFeatureActive } = select( 'core/edit-post' );
 		return {
-			onChange() {
-				toggleFeature( feature );
-			},
+			isChecked: isFeatureActive( featureName ),
 		};
-	} )
+	} ),
+	withDispatch( ( dispatch, { featureName } ) => ( {
+		onChange: () =>
+			dispatch( 'core/edit-post' ).toggleFeature( featureName ),
+	} ) )
 )( BaseOption );

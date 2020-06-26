@@ -6,17 +6,13 @@ import { View, TouchableWithoutFeedback, Text } from 'react-native';
 import { isEmpty } from 'lodash';
 
 /**
- * Internal dependencies
+ * WordPress dependencies
  */
 import {
 	mediaUploadSync,
 	requestImageFailedRetryDialog,
 	requestImageUploadCancelDialog,
-} from 'react-native-gutenberg-bridge';
-
-/**
- * WordPress dependencies
- */
+} from '@wordpress/react-native-bridge';
 import {
 	Icon,
 	ToolbarButton,
@@ -36,9 +32,9 @@ import {
 	InspectorControls,
 } from '@wordpress/block-editor';
 import { __, sprintf } from '@wordpress/i18n';
-import { isURL } from '@wordpress/url';
+import { isURL, getProtocol } from '@wordpress/url';
 import { doAction, hasAction } from '@wordpress/hooks';
-import { video as SvgIcon, pencil } from '@wordpress/icons';
+import { video as SvgIcon, replace } from '@wordpress/icons';
 
 /**
  * Internal dependencies
@@ -80,7 +76,7 @@ class VideoEdit extends React.Component {
 
 	componentDidMount() {
 		const { attributes } = this.props;
-		if ( attributes.id && ! isURL( attributes.src ) ) {
+		if ( attributes.id && getProtocol( attributes.src ) === 'file:' ) {
 			mediaUploadSync();
 		}
 	}
@@ -111,7 +107,10 @@ class VideoEdit extends React.Component {
 
 		if ( this.state.isUploadInProgress ) {
 			requestImageUploadCancelDialog( attributes.id );
-		} else if ( attributes.id && ! isURL( attributes.src ) ) {
+		} else if (
+			attributes.id &&
+			getProtocol( attributes.src ) === 'file:'
+		) {
 			requestImageFailedRetryDialog( attributes.id );
 		}
 
@@ -204,7 +203,7 @@ class VideoEdit extends React.Component {
 							{ getMediaOptions() }
 							<ToolbarButton
 								label={ __( 'Edit video' ) }
-								icon={ pencil }
+								icon={ replace }
 								onClick={ open }
 							/>
 						</ToolbarGroup>
@@ -351,6 +350,7 @@ class VideoEdit extends React.Component {
 						isSelected={ this.state.isCaptionSelected }
 						onFocus={ this.onFocusCaption }
 						onBlur={ this.props.onBlur } // always assign onBlur as props
+						insertBlocksAfter={ this.props.insertBlocksAfter }
 					/>
 				</View>
 			</TouchableWithoutFeedback>
